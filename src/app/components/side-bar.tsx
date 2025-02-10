@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FiArrowLeft, FiSettings } from "react-icons/fi";
+import { FiArrowLeft, FiSettings, FiLogOut } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 
 const SideBar = () => {
   const [activeSection, setActiveSection] = useState<
@@ -11,11 +12,21 @@ const SideBar = () => {
 
   const handleBack = () => setActiveSection("main");
 
+  const router = useRouter();
+
+
   // Animaciones para las transiciones
   const variants = {
     hidden: { x: "-100%", opacity: 0 },
     visible: { x: 0, opacity: 1 },
     exit: { x: "100%", opacity: 0 },
+  };
+
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setIsSettingsOpen(false);
+    router.push("/login"); // Redirigir a login después de cerrar sesión
   };
 
   return (
@@ -139,7 +150,18 @@ const SideBar = () => {
             className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-96"
           >
             <h2 className="text-lg font-bold mb-4">Configuración</h2>
-            <p>Aquí puedes personalizar los ajustes de la aplicación.</p>
+            <p className="mb-4">Ajustes de la aplicación.</p>
+
+            {/* Botón de Cerrar Sesión dentro del modal */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            >
+              <FiLogOut className="text-xl mr-2" />
+              Cerrar Sesión
+            </button>
+
+            {/* Botón para cerrar el modal */}
             <button
               onClick={() => setIsSettingsOpen(false)}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
