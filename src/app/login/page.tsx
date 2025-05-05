@@ -3,12 +3,25 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiSun, FiMoon } from "react-icons/fi";
+import { Web3Provider } from "@ethersproject/providers";
+// Importa el SDK y el método de autenticación de OrbisDB (Ceramic)
+import { OrbisDB } from "@useorbis/db-sdk";
+import { OrbisEVMAuth } from "@useorbis/db-sdk/auth";
+import { db } from "../ceramic/orbisDB";
+
+// Extendemos la interfaz de Window para que reconozca ethereum
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
+const orbis = db; // Instancia global de OrbisDB
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [address, setAddress] = useState<string>("");
   const router = useRouter();
 
   useEffect(() => {
@@ -20,31 +33,45 @@ const Login = () => {
       document.documentElement.classList.add("light");
     }
 
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      router.push("/");
+    // Si ya hay sesión, redirige a la home
+    const session = localStorage.getItem("orbis:session");
+    if (session) {
+      router.push("/register");
     }
-  }, []);
+  }, [router]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
-
     document.documentElement.classList.remove(theme);
     document.documentElement.classList.add(newTheme);
-
     localStorage.setItem("theme", newTheme);
   };
 
-  const handleLogin = () => {
-    if (!username.trim() || !password.trim()) {
-      setError("Por favor, completa ambos campos.");
+  const handleLogin = async () => {
+    if (!window.ethereum) {
+      setError("MetaMask no está instalado.");
       return;
     }
-    setError("");
+    try {
+      // Solicitar conexión a la wallet
+      const provider = window.ethereum;
+      // Creamos la instancia de autenticación con el provider de MetaMask
+      const auth = new OrbisEVMAuth(provider);
+      // Conectamos el usuario: esto firma la petición y obtiene su DID
+      const authResult = await orbis.connectUser({ auth });
 
-    localStorage.setItem("user", JSON.stringify({ username }));
-    router.push("/");
+      if (authResult) {
+        debugger;
+        console.log("Autenticación exitosa:", authResult);
+        router.push("/");
+      } else {
+        setError("Error en la autenticación: " + authResult);
+      }
+    } catch (err: any) {
+      setError("Error en la autenticación con Ceramic.");
+      console.error(err);
+    }
   };
 
   return (
@@ -53,7 +80,11 @@ const Login = () => {
         onClick={toggleTheme}
         className="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md hover:shadow-lg transition-all duration-300"
       >
-        {theme === "light" ? <FiMoon className="text-xl" /> : <FiSun className="text-xl" />}
+        {theme === "light" ? (
+          <FiMoon className="text-xl" />
+        ) : (
+          <FiSun className="text-xl" />
+        )}
       </button>
 
       <motion.div
@@ -63,40 +94,23 @@ const Login = () => {
         className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-96"
       >
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 text-center mb-4">
-          Iniciar Sesión
+          Iniciar Sesión con Wallet 
         </h2>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Nombre de usuario"
-          className="w-full p-3 border rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-        />
-
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Contraseña"
-          className="w-full p-3 border rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-        />
-
-        <button onClick={handleLogin} className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition">
-          Entrar al Chat
+        <button
+          onClick={handleLogin}
+          className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition"
+        >
+          Conectar y firmar con MetaMask
         </button>
 
-        <p className="text-center text-gray-600 dark:text-gray-300 mt-4">
-          ¿No tienes cuenta?{" "}
-          <span
-            onClick={() => router.push("/register")}
-            className="text-blue-500 cursor-pointer hover:underline"
-          >
-            Regístrate aquí
-          </span>
-        </p>
+        {address && (
+          <p className="text-center text-gray-600 dark:text-gray-300 mt-4">
+            Conectado como: {address.slice(0, 6)}...{address.slice(-4)}
+          </p>
+        )}
       </motion.div>
     </div>
   );

@@ -1,0 +1,292 @@
+{
+    "chat": {
+        "name": "chat",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$defs": {
+                "DateTime": {
+                    "type": "string",
+                    "title": "DateTime",
+                    "format": "date-time",
+                    "maxLength": 100
+                },
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                },
+                "MsgType": {
+                    "type": "string",
+                    "title": "MsgType",
+                    "enum": ["text", "image", "video", "audio", "file"]
+                }
+            },
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "creator": {
+                    "$ref": "#/$defs/CeramicStreamID"
+                },
+                "creationDate": {
+                    "$ref": "#/$defs/DateTime"
+                },
+                "admins": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/CeramicStreamID" }
+                }
+            },
+            "required": ["title", "creator", "creationDate"],
+            "additionalProperties": false
+        }
+    },
+    "message": {
+        "name": "message",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "DateTime": {
+                    "type": "string",
+                    "title": "DateTime",
+                    "format": "date-time",
+                    "maxLength": 100
+                },
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                },
+                "MsgType": {
+                    "type": "string",
+                    "title": "MsgType",
+                    "enum": ["text", "image", "video", "audio", "file"]
+                }
+            },
+            "properties": {
+                "author": {
+                    "$ref": "#/$defs/CeramicStreamID"
+                },
+                "chatId": {
+                    "$ref": "#/$defs/CeramicStreamID"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "msgType": {
+                    "$ref": "#/$defs/MsgType"
+                },
+                "date": {
+                    "$ref": "#/$defs/DateTime"
+                }
+            },
+            "required": ["author", "chatId", "content", "msgType", "date"],
+            "additionalProperties": false
+        }
+    },
+    "community": {
+        "name": "community",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                }
+            },
+            "properties": {
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "creator": { "$ref": "#/$defs/CeramicStreamID" },
+                "admins": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/CeramicStreamID" }
+                }
+            },
+            "required": ["name", "description", "creator"],
+            "additionalProperties": false
+        }
+    },
+    "post": {
+        "name": "post",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                },
+                "Attachment": {
+                    "type": "object",
+                    "properties": {
+                        "content": { "type": "string" },
+                        "type": { "type": "string" }
+                    },
+                    "required": ["content", "type"],
+                    "additionalProperties": false
+                },
+                "DateTime": {
+                    "type": "string",
+                    "title": "DateTime",
+                    "format": "date-time",
+                    "maxLength": 100
+                }
+            },
+            "properties": {
+                "title": { "type": "string" },
+                "content": { "type": "string" },
+                "date": { "$ref": "#/$defs/DateTime" },
+                "attachment": { "$ref": "#/$defs/Attachment" },
+                "communityId": { "$ref": "#/$defs/CeramicStreamID" },
+                "likes": { "type": "array",
+                    "items": { "$ref": "#/$defs/CeramicStreamID" }
+                }
+            },
+            "required": ["title", "content", "attachment", "communityId", "date"],
+            "additionalProperties": false
+        }
+    },
+    "reply": {
+        "name": "reply",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                }
+            },
+            "properties": {
+                "writer": { "$ref": "#/$defs/CeramicStreamID" },
+                "postId": { "$ref": "#/$defs/CeramicStreamID" },
+                "content": { "type": "string" },
+                "likes": { "type": "array",
+                    "items": { "$ref": "#/$defs/CeramicStreamID" }
+                }
+            },
+            "required": ["postId", "content"],
+            "additionalProperties": false
+        }
+    },
+    "relationship": {
+        "name": "relationship",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                },
+                "Status": {
+                    "type": "string",
+                    "title": "Status",
+                    "enum": ["pending", "accepted", "rejected", "blocked"]
+                }
+            },
+            "properties": {
+                "from": { "$ref": "#/$defs/CeramicStreamID" },
+                "to": { "$ref": "#/$defs/CeramicStreamID" },
+                "status": { "$ref": "#/$defs/Status" }
+            },
+            "required": ["from", "to", "status"],
+            "additionalProperties": false
+        }
+    },
+    "chat_membership": {
+        "name": "chat_membership",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+          "type": "object",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$defs":{
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                }
+            },
+          "properties": {
+            "chatId": { "$ref": "#/$defs/CeramicStreamID" },
+            "userId": { "$ref": "#/$defs/CeramicStreamID" }
+          },
+          "required": ["chatId","userId"],
+          "additionalProperties": false
+        }
+    },
+    "report": {
+        "name": "report",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                },
+                "DateTime": {
+                    "type": "string",
+                    "title": "DateTime",
+                    "format": "date-time",
+                    "maxLength": 100
+                }
+            },
+            "properties": {
+                "reporterId": { "$ref": "#/$defs/CeramicStreamID" },
+                "reportedId": { "$ref": "#/$defs/CeramicStreamID" },
+                "reason": { "type": "string" },
+                "date": { "$ref": "#/$defs/DateTime" }
+            },
+            "required": ["reporterId", "reportedId", "reason", "date"],
+            "additionalProperties": false
+        }
+    }
+}

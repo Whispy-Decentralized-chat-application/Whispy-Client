@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSettings, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import { retrieveMyChats } from "../ceramic/orbisDB";
 
 const SideBar = () => {
   const [activeSection, setActiveSection] = useState<
@@ -9,11 +10,10 @@ const SideBar = () => {
   >("main");
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  const handleBack = () => setActiveSection("main");
-
+  const [chats, setChats] = useState<any[]>([]);
   const router = useRouter();
 
+  const handleBack = () => setActiveSection("main");
 
   // Animaciones para las transiciones
   const variants = {
@@ -24,10 +24,27 @@ const SideBar = () => {
 
   // Función para cerrar sesión
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem("orbis:session");
     setIsSettingsOpen(false);
     router.push("/login"); // Redirigir a login después de cerrar sesión
   };
+
+  // Obtener chats cuando se selecciona la sección "chats"
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const myChats = await retrieveMyChats();
+        console.log("Chats obtenidos:", myChats);
+        setChats(myChats);
+      } catch (error) {
+        console.error("Error al obtener los chats:", error);
+      }
+    };
+
+    if (activeSection === "chats") {
+      fetchChats();
+    }
+  }, [activeSection]);
 
   return (
     <div className="w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg flex flex-col justify-between overflow-hidden">
@@ -99,16 +116,22 @@ const SideBar = () => {
           )}
 
           {activeSection === "chats" && (
-            <ul className="space-y-2">
-              {["Chat de trabajo", "Familia", "Amigos"].map((chat, index) => (
-                <li
-                  key={index}
-                  className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
-                >
-                  {chat}
-                </li>
-              ))}
-            </ul>
+            <>
+              {chats.length > 0 ? (
+                <ul className="space-y-2">
+                  {chats.map((chat, index) => (
+                    <li
+                      key={index}
+                      className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+                    >
+                      {chat.title || `Chat ${index + 1}`}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No hay chats disponibles.</p>
+              )}
+            </>
           )}
 
           {activeSection === "communities" && (

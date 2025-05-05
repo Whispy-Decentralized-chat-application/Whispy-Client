@@ -3,16 +3,16 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiSun, FiMoon } from "react-icons/fi";
+import { getMe, registerUser } from "../ceramic/orbisDB";
 
 const Register = () => {
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const router = useRouter();
 
   useEffect(() => {
+    // Configurar tema
     const storedTheme = localStorage.getItem("theme") as "light" | "dark";
     if (storedTheme) {
       setTheme(storedTheme);
@@ -21,12 +21,26 @@ const Register = () => {
       document.documentElement.classList.add("light");
     }
 
-    // Si ya está autenticado, redirigir al chat
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      router.push("/");
-    }
-  }, []);
+    // Verificar sesión o perfil de usuario
+    const fetchUser = async () => {
+      const session = localStorage.getItem("orbis:session");
+      console.log("hola")
+      let userProfile:any;
+      try {
+        userProfile = await getMe();
+        console.log("Perfil de usuario:", userProfile);
+        if (userProfile) {
+          router.push("/"); // Redirige si ya hay perfil
+        }
+      } catch (error) {
+        if (!session) {
+          router.push("/login"); // Redirige si no hay sesión
+        }
+      }
+    };
+
+    fetchUser();
+  });
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -38,24 +52,24 @@ const Register = () => {
     localStorage.setItem("theme", newTheme);
   };
 
-  const handleRegister = () => {
-    if (!username.trim() || !password.trim() || !confirmPassword.trim()) {
-      setError("Por favor, completa todos los campos.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+  const handleRegister = async () => {
+    if (!username.trim()) {
+      setError("Por favor, ingresa un nombre de usuario.");
       return;
     }
 
     setError("");
+    try {
+      // Registrar usuario en OrbisDB utilizando la función registerUser
+      const userData = username ;
+      const result = await registerUser(userData);
+      console.log("Usuario registrado:", result);
 
-    // Guardar usuario en localStorage (simulación de registro)
-    localStorage.setItem("user", JSON.stringify({ username, password }));
-
-    // Redirigir al chat
-    router.push("/");
+      router.push("/");
+    } catch (err: any) {
+      console.error("Error al registrar:", err);
+      setError("Error al registrar el usuario.");
+    }
   };
 
   return (
@@ -75,7 +89,7 @@ const Register = () => {
         className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-96"
       >
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 text-center mb-4">
-          Crear Cuenta
+          Crear Cuenta de Whispy
         </h2>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
@@ -89,24 +103,6 @@ const Register = () => {
           className="w-full p-3 border rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
         />
 
-        {/* Input de Contraseña */}
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Contraseña"
-          className="w-full p-3 border rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-        />
-
-        {/* Input de Confirmación de Contraseña */}
-        <input
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Confirmar Contraseña"
-          className="w-full p-3 border rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-        />
-
         {/* Botón de Registro */}
         <button
           onClick={handleRegister}
@@ -115,16 +111,7 @@ const Register = () => {
           Registrarse
         </button>
 
-        {/* Enlace para volver al login */}
-        <p className="text-center text-gray-600 dark:text-gray-300 mt-4">
-          ¿Ya tienes cuenta?{" "}
-          <span
-            onClick={() => router.push("/login")}
-            className="text-blue-500 cursor-pointer hover:underline"
-          >
-            Inicia sesión aquí
-          </span>
-        </p>
+       
       </motion.div>
     </div>
   );

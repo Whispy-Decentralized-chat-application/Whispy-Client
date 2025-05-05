@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ethersproject/providers": "^5.8.0",
+    "@useorbis/db-sdk": "^0.0.60-alpha",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.8.4",
     "ethers": "^6.13.5",
     "framer-motion": "^12.0.3",
     "next": "15.1.6",
