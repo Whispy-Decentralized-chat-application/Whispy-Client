@@ -21,10 +21,11 @@ const ChatApp = () => {
         } 
         let userProfile;
         try {
-          const user = localStorage.getItem("user");
+          console.log("Page loading...");
+          const user = localStorage.getItem("orbis:user");
           if (!user) {
             userProfile = await getMe();
-            localStorage.setItem("user", JSON.stringify(userProfile));
+            localStorage.setItem("orbis:user", JSON.stringify(userProfile));
           } else {
             userProfile = JSON.parse(user);
           }

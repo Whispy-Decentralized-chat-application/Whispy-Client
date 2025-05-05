@@ -25,6 +25,7 @@ const SideBar = () => {
   // Función para cerrar sesión
   const handleLogout = () => {
     localStorage.removeItem("orbis:session");
+    localStorage.removeItem("orbis:user");
     setIsSettingsOpen(false);
     router.push("/login"); // Redirigir a login después de cerrar sesión
   };

@@ -64,7 +64,7 @@ const Login = () => {
       if (authResult) {
         debugger;
         console.log("Autenticación exitosa:", authResult);
-        router.push("/");
+        router.push("/register");
       } else {
         setError("Error en la autenticación: " + authResult);
       }
