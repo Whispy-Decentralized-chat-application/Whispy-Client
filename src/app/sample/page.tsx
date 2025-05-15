@@ -1,8 +1,10 @@
 "use client";
 import { use, useEffect, useState } from "react";
-import { contexts, db, models, getMe} from "../ceramic/orbisDB";
+import { contexts, db, models} from "../ceramic/orbisDB";
 import { OrbisConnectResult } from "@useorbis/db-sdk";
 import { tr } from "framer-motion/client";
+import * as jsonModels from "../ceramic/models.json";
+import { getMe } from "../ceramic/userService";
 
 
 const SamplePage = () => {
@@ -17,6 +19,17 @@ const SamplePage = () => {
 
         checkConnection();
     }, []);
+
+    const createModel = async () => {
+        try {
+            const model:any = jsonModels.friendEvent;
+            const response = await orbis.ceramic.createModel(model);
+            console.log("Modelo creado:", response);
+        } catch (error) {
+            console.error("Error creando el modelo:", error);
+            setResult("Error creando el modelo");
+        }
+    };
 
     // const handleRequestTest = async () => {
         
@@ -156,6 +169,7 @@ const SamplePage = () => {
         const chatMembershipModel = models.chat_membership;
         const { columns, rows } = await orbis
         .select()
+        .context(contexts.whispy_test)
         .raw(
             `
             SELECT c.*
@@ -196,12 +210,12 @@ const SamplePage = () => {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
             <h1 className="text-2xl font-bold mb-4">Componente de Prueba</h1>
-            {/* <button 
+            <button 
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded mb-4" 
-                onClick={handleRequestTest}
+                onClick={createModel}
             >
-                Inserción de modelos
-            </button> */}
+                Crear modelo
+            </button>
             <button 
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded mb-4" 
                 onClick={testData}

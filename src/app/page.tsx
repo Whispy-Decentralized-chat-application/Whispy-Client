@@ -5,7 +5,7 @@ import Header from "./components/header";
 import ChatList from "./components/chat-list";
 import ChatInput from "./components/chat-input";
 import SideBar from "./components/side-bar";
-import { getMe } from "./ceramic/orbisDB";
+import { getMe } from "./ceramic/userService";
 
 const ChatApp = () => {
   const [user, setUser] = useState<string | null>(null);
@@ -13,34 +13,26 @@ const ChatApp = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      
-        const session = localStorage.getItem("orbis:session");
-        
-        if (!session) {
-          router.push("/login"); // Redirige si no hay perfil
-        } 
-        let userProfile;
-        try {
-          console.log("Page loading...");
-          const user = localStorage.getItem("orbis:user");
-          if (!user) {
-            userProfile = await getMe();
-            localStorage.setItem("orbis:user", JSON.stringify(userProfile));
-          } else {
-            userProfile = JSON.parse(user);
-          }
-
-        } catch (error) {
-          console.error("Error al obtener el perfil de usuario:", error);
-          router.push("/register"); // Redirige si hay un error
+      const session = localStorage.getItem("orbis:session");
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+      try {
+        const profile = await getMe();
+        if (!profile) {
+          router.push("/register");
+          return;
         }
-
-        if (userProfile) {
-          setUser(userProfile);
-        }
-      
+        const profileStr = JSON.stringify(profile);
+        localStorage.setItem("orbis:user", profileStr);
+        setUser(profileStr);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        router.push("/login");
+      }
     };
-  
+
     fetchUser();
   }, [router]);
 

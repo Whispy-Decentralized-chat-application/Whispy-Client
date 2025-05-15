@@ -288,5 +288,47 @@
             "required": ["reporterId", "reportedId", "reason", "date"],
             "additionalProperties": false
         }
+    },
+   "friendEvent": {
+        "name": "friendEvent",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": {
+            "type": "set",
+            "fields": ["requester", "userPeer", "type"]
+        },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+            "CeramicStreamID": {
+                "type": "string",
+                "title": "CeramicStreamID",
+                "maxLength": 100
+            },
+            "DateTime": {
+                "type": "string",
+                "title": "DateTime",
+                "format": "date-time"
+            },
+            "EventType": {
+                "type": "string",
+                "title": "EventType",
+                "enum": ["REQUEST", "ACCEPT", "REJECT", "BLOCK", "UNBLOCK"]
+            }
+            },
+            "properties": {
+            "requester": { "$ref": "#/$defs/CeramicStreamID" },
+            "userPeer":   { "$ref": "#/$defs/CeramicStreamID" },
+            "eventPeer": { "$ref": "#/$defs/CeramicStreamID" },
+            "type":       { "$ref": "#/$defs/EventType" },
+            "lastMod":    { "$ref": "#/$defs/DateTime" }
+            },
+            "required": ["requester", "userPeer", "type", "lastMod"],
+            "additionalProperties": false
+        }
     }
+
 }

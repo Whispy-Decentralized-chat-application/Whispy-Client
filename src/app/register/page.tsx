@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiSun, FiMoon } from "react-icons/fi";
-import { getMe, registerUser } from "../ceramic/orbisDB";
+import { getMe, registerUser } from "../ceramic/userService";
 
 const Register = () => {
   const [username, setUsername] = useState("");
@@ -27,10 +27,13 @@ const Register = () => {
       console.log("hola")
       let userProfile:any;
       try {
-        userProfile = await getMe();
-        console.log("Perfil de usuario:", userProfile);
+        userProfile = localStorage.getItem("orbis:user");
+  
         if (userProfile) {
           router.push("/"); // Redirige si ya hay perfil
+        }else {
+          const user = await getMe();
+          localStorage.setItem("orbis:user", JSON.stringify(user));
         }
       } catch (error) {
         if (!session) {

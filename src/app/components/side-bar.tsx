@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FiArrowLeft, FiSettings, FiLogOut } from "react-icons/fi";
+import { FiArrowLeft, FiSettings, FiLogOut, FiChevronUp, FiChevronDown, FiCheck, FiX, FiSlash } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { retrieveMyChats, createChat } from "../ceramic/orbisDB";
+import { FiUserPlus } from "react-icons/fi";  // añade este import
+import ThemeToggle from "./ThemeToggle";
+import { createChat, retrieveMyChats } from "../ceramic/chatService";
+import { acceptFriendRequest, retrieveContacts, retrieveFriendRequests, sendFriendRequest } from "../ceramic/relationService";
+
 
 const SideBar = () => {
   const [activeSection, setActiveSection] = useState<
     "main" | "contacts" | "chats" | "communities"
   >("main");
 
+  const [confirmBlockId, setConfirmBlockId] = useState<string | null>(null);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [isPendingOpen, setIsPendingOpen] = useState(false);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [newContactId, setNewContactId] = useState(""); // para el modal de añadir contacto
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCreateChatOpen, setIsCreateChatOpen] = useState(false);
   const [chatName, setChatName] = useState("");
@@ -49,6 +59,70 @@ const SideBar = () => {
       fetchChats();
     }
   }, [activeSection]);
+
+  const handleContactsClick = async () => {
+    setActiveSection("contacts");
+    try {
+      const data = await retrieveContacts();
+      setContacts(data);
+      const pending = await retrieveFriendRequests();
+      setPendingRequests(pending);
+    } catch (error) {
+      console.error("Error al obtener contactos o pendientes:", error);
+    }
+  };
+
+  // opcional: handlers para aceptar/rechazar
+ // ACEPTAR petición y actualizar estado
+ const handleAcceptRequest = async (userPeer: string, eventPeer: string) => {
+  try {
+    await acceptFriendRequest(userPeer, eventPeer);
+    // refrescar contactos y solicitudes pendientes
+    const updatedContacts = await retrieveContacts();
+    setContacts(updatedContacts);
+    const updatedPending = await retrieveFriendRequests();
+    setPendingRequests(updatedPending);
+  } catch (error) {
+    console.error("Error al aceptar petición:", error);
+  }
+};
+
+// RECHAZAR petición y actualizar estado
+const handleRejectRequest = async (streamId: string) => {
+  try {
+    // TODO: implementar lógica de rechazo en backend
+    // Eliminamos del array local para evitar datos inconsistentes
+    setPendingRequests(prev => prev.filter(req => req.stream_id !== streamId));
+  } catch (error) {
+    console.error("Error al rechazar petición:", error);
+  }
+};
+
+  // Lógica para bloquear
+  const performBlock = async () => {
+    if (!confirmBlockId) return;
+    try {
+      await handleBlockRequest(confirmBlockId);
+    } catch (e) {
+      console.error("Error bloqueando usuario:", e);
+    }
+    setConfirmBlockId(null);
+  };
+
+  const handleBlockRequest = async (from: string) => {
+    // TODO: implementar lógica de bloqueo
+    console.log("Bloquear usuario:", from);
+  };
+
+
+  const handleSendFriendRequest = async (to: string) => {
+    try {
+      await sendFriendRequest(to);
+      setIsAddContactOpen(false);
+    } catch (error) {
+      console.error("Error enviando petición de amistad:", error);
+    }
+  };
 
   // Función para actualizar el valor de un miembro en una posición determinada
 const handleMemberChange = (index: number, value: string) => {
@@ -122,12 +196,20 @@ const handleCreateChat = async () => {
       >
         {activeSection === "main" && (
           <div className="space-y-4">
+           <div className="flex">
+           <button
+                onClick={handleContactsClick}
+                className="flex-grow p-3 bg-blue-500 text-white rounded-l-lg hover:bg-blue-600 transition"
+              >
+                Contactos
+              </button>
             <button
-              onClick={() => setActiveSection("contacts")}
-              className="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+              onClick={() => setIsAddContactOpen(true)}
+              className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 transition"
             >
-              Contactos
+              <FiUserPlus className="text-xl" />
             </button>
+          </div>
             <button
               onClick={() => setActiveSection("chats")}
               className="w-full p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
@@ -143,18 +225,113 @@ const handleCreateChat = async () => {
           </div>
         )}
 
-        {activeSection === "contacts" && (
-          <ul className="space-y-2">
-            {["Juan", "María", "Carlos"].map((contact, index) => (
+    {activeSection === "contacts" && (
+      <>
+        <ul className="space-y-2">
+          {contacts.length > 0 ? (
+            contacts.map((c, i) => (
               <li
-                key={index}
+                key={i}
                 className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
               >
-                {contact}
+                {c.username || c.controller}
               </li>
-            ))}
-          </ul>
+            ))
+          ) : (
+            <p>No hay contactos.</p>
+          )}
+        </ul>
+
+        {/* BANDA DE PENDING */}
+        <div
+          onClick={() => setIsPendingOpen((o) => !o)}
+          className="mt-4 bg-yellow-100 dark:bg-yellow-700 flex justify-between items-center px-4 py-2 rounded-lg cursor-pointer"
+        >
+          <span className="text-yellow-800 dark:text-yellow-200">
+            Solicitudes pendientes ({pendingRequests.length})
+          </span>
+          {isPendingOpen ? (
+            <FiChevronUp className="text-yellow-800 dark:text-yellow-200" />
+          ) : (
+            <FiChevronDown className="text-yellow-800 dark:text-yellow-200" />
+          )}
+        </div>
+
+        {isPendingOpen && (
+          <ul className="mt-2 space-y-2">
+          {pendingRequests.length > 0 ? (
+            pendingRequests.map((req) => (
+              <li
+                key={req.stream_id}
+                className="flex justify-between items-center bg-yellow-50 dark:bg-yellow-800 p-3 rounded-lg"
+              >
+                {/* Mostrar el username del solicitante */}
+                <span className="text-gray-800 dark:text-gray-200">
+                  {req.username}
+                </span>
+                <div className="flex space-x-2">
+                <button
+                  onClick={() => handleAcceptRequest(req.userStream, req.eventToRespond)}
+                  className="p-1 bg-green-500 text-white rounded-full hover:bg-green-600 transition"
+                >
+                  <FiCheck className="text-lg" />
+                </button>
+                <button
+                  onClick={() => handleRejectRequest(req.stream_id)}
+                  className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                >
+                  <FiX className="text-lg" />
+                </button>
+                <button
+                  onClick={() => setConfirmBlockId(req.stream_id)}
+                  className="p-1 bg-gray-500 text-white rounded-full hover:bg-gray-600 transition"
+                >
+                  <FiSlash className="text-lg" />
+                </button>
+                </div>
+              </li>
+            ))
+          ) : (
+            <p className="px-4 py-2 text-gray-600 dark:text-gray-400">
+              No hay solicitudes pendientes.
+            </p>
+          )}
+        </ul>
         )}
+      </>
+    )}
+
+    {/* Confirmación de bloqueo */}
+    {confirmBlockId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-80"
+          >
+            <h3 className="text-lg font-bold mb-4">Confirmar bloqueo</h3>
+            <p className="mb-6">
+              ¿Estás seguro de bloquear a este usuario? Ya no podrás ver sus peticiones.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setConfirmBlockId(null)}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={performBlock}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Bloquear
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
         {activeSection === "chats" && (
           <>
@@ -225,6 +402,7 @@ const handleCreateChat = async () => {
             <p className="mb-4">Ajustes de la aplicación.</p>
 
             {/* Botón de Cerrar Sesión dentro del modal */}
+            <ThemeToggle/>
             <button
               onClick={handleLogout}
               className="w-full flex items-center justify-center p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
@@ -244,8 +422,42 @@ const handleCreateChat = async () => {
         </div>
       )}
 
+      {/* Modal de Añadir Contacto */}
+      {isAddContactOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-80"
+          >
+            <h2 className="text-lg font-bold mb-4">Añadir Contacto</h2>
+            <input
+              type="text"
+              placeholder="Dirección blockchain o nombre de usuario"
+              className="w-full p-2 border rounded-lg bg-gray-100 dark:bg-gray-700 mb-4"
+              onChange={e => setNewContactId(e.target.value)}
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setIsAddContactOpen(false)}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleSendFriendRequest(newContactId)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+              >
+                Enviar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Modal de Crear Chat */}
-      // Dentro del modal de "Crear Chat"
       {isCreateChatOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <motion.div
@@ -310,6 +522,8 @@ const handleCreateChat = async () => {
             </div>
           </motion.div>
         </div>
+
+        
       )}
     </div>
   );
