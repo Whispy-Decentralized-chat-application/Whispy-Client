@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSettings, FiLogOut, FiChevronUp, FiChevronDown, FiCheck, FiX, FiSlash } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -24,6 +24,10 @@ const SideBar = () => {
   const [chatName, setChatName] = useState("");
   const [members, setMembers] = useState<string[]>([]);
   const [chats, setChats] = useState<any[]>([]);
+  const [availableContacts, setAvailableContacts] = useState<any[]>([]);
+  const [selectedMembersForChat, setSelectedMembersForChat] = useState<string[]>([]);
+  const [contactSearchTerm, setContactSearchTerm] = useState("");
+
   const router = useRouter();
 
   const handleBack = () => setActiveSection("main");
@@ -59,6 +63,37 @@ const SideBar = () => {
       fetchChats();
     }
   }, [activeSection]);
+
+  useEffect(() => {
+    if (isCreateChatOpen) {
+      (async () => {
+        try {
+          const data = await retrieveContacts();
+          setAvailableContacts(data);
+        } catch (err) {
+          console.error("Error cargando contactos para chat:", err);
+        }
+      })();
+    }
+  }, [isCreateChatOpen]);
+
+  const filteredContacts = useMemo(() => 
+    availableContacts
+      .filter(c => {
+        const name = (c.username || c.controller).toLowerCase();
+        return name.includes(contactSearchTerm.toLowerCase());
+      })
+      .filter(c => !selectedMembersForChat.includes(c.stream_id))
+  , [availableContacts, contactSearchTerm, selectedMembersForChat]);
+
+
+  const handleSelectMember = (streamId: string, checked: boolean) => {
+    setSelectedMembersForChat(prev =>
+      checked
+        ? [...prev, streamId]
+        : prev.filter(id => id !== streamId)
+    );
+  };
 
   const handleContactsClick = async () => {
     setActiveSection("contacts");
@@ -145,17 +180,14 @@ const removeMemberInput = (index: number) => {
 
 // Actualiza la función de crear chat para usar el array "members"
 const handleCreateChat = async () => {
-  if (!chatName.trim()) return;
-  // Filtrar entradas vacías
-  const filteredMembers = members.map(m => m.trim()).filter(m => m !== "");
+  if (!chatName.trim() || selectedMembersForChat.length === 0) return;
   try {
-    await createChat(chatName, filteredMembers);
-    // Opción: Volver a obtener los chats luego de la creación
+    await createChat(chatName, selectedMembersForChat);
     const myChats = await retrieveMyChats();
     setChats(myChats);
     setIsCreateChatOpen(false);
     setChatName("");
-    setMembers([]);
+    setSelectedMembersForChat([]);
   } catch (error) {
     console.error("Error creando chat:", error);
   }
@@ -459,72 +491,91 @@ const handleCreateChat = async () => {
 
       {/* Modal de Crear Chat */}
       {isCreateChatOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-96"
-          >
-            <h2 className="text-lg font-bold mb-4">Crear Chat</h2>
-            <div className="mb-4">
-              <label className="block text-sm mb-1">Nombre del Chat</label>
-              <input
-                type="text"
-                value={chatName}
-                onChange={(e) => setChatName(e.target.value)}
-                placeholder="Ingrese el nombre del chat"
-                className="w-full p-2 border rounded-lg bg-gray-100 dark:bg-gray-700"
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm mb-1">Miembros</label>
-              {members.map((member, index) => (
-                <div key={index} className="flex items-center mb-2">
-                  <input
-                    type="text"
-                    value={member}
-                    onChange={(e) => handleMemberChange(index, e.target.value)}
-                    placeholder={`ID del miembro ${index + 1}`}
-                    className="w-full p-2 border rounded-lg bg-gray-100 dark:bg-gray-700"
-                  />
-                  <button
-                    onClick={() => removeMemberInput(index)}
-                    className="ml-2 p-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                  >
-                    -
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={addMemberInput}
-                className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-              >
-                Agregar Miembro
-              </button>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setIsCreateChatOpen(false)}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateChat}
-                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
-              >
-                Crear
-              </button>
-            </div>
-          </motion.div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-96"
+      >
+        <h2 className="text-lg font-bold mb-4">Crear Chat</h2>
+        <div className="mb-4">
+          <label className="block text-sm mb-1">Nombre del Chat</label>
+          <input
+            type="text"
+            value={chatName}
+            onChange={e => setChatName(e.target.value)}
+            placeholder="Ingrese el nombre del chat"
+            className="w-full p-2 border rounded-lg bg-gray-100 dark:bg-gray-700"
+          />
         </div>
 
-        
-      )}
+        {/* Etiquetas de miembros seleccionados */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {selectedMembersForChat.map(streamId => {
+            const contact = availableContacts.find(c => c.stream_id === streamId);
+            return (
+              <div
+                key={streamId}
+                className="flex items-center bg-blue-100 dark:bg-blue-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-full"
+              >
+                <span className="mr-1 text-sm">
+                  {contact?.username || contact?.controller}
+                </span>
+                <FiX
+                  className="cursor-pointer"
+                  onClick={() => handleSelectMember(streamId, false)}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Buscador de contactos */}
+        <div className="mb-4 relative">
+          <input
+            type="text"
+            value={contactSearchTerm}
+            onChange={e => setContactSearchTerm(e.target.value)}
+            placeholder="Añadir miembros..."
+            className="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700"
+          />
+          {contactSearchTerm && filteredContacts.length > 0 && (
+            <ul className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md max-h-40 overflow-auto z-50">
+              {filteredContacts.map(c => (
+                <li
+                  key={c.stream_id}
+                  onClick={() => {
+                    handleSelectMember(c.stream_id, true);
+                    setContactSearchTerm("");
+                  }}
+                  className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                >
+                  {c.username || c.controller}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={() => setIsCreateChatOpen(false)}
+            className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleCreateChat}
+            className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
+          >
+            Crear
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )}
     </div>
   );
 };
