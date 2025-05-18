@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { FiUserPlus } from "react-icons/fi";
-import { getUserByBcAdress, getUserByUsername } from "@/app/ceramic/userService";
+import { getUserByBcAdress, getUserById, getUserByUsername } from "@/app/ceramic/userService";
 import { isFriend, sendFriendRequest } from "@/app/ceramic/relationService";
+import { isStreamId } from "@/app/ceramic/orbisDB";
 
 interface Profile {
   stream_id: string;
@@ -24,13 +25,16 @@ const OtherProfilePage = () => {
       router.push("/profile");
       return;
     }
+
+    
     const param = Array.isArray(controller) ? controller[0] : controller;
     const isBc = /^0x[0-9a-fA-F]{40}$/.test(param);
+
     (async () => {
       try {
         const data = isBc
           ? await getUserByBcAdress(param)
-          : await getUserByUsername(param);
+          : isStreamId(param) ? await getUserById(param) : await getUserByUsername(param);
         if (!data) {
           router.push("/profile");
           return;
@@ -91,7 +95,7 @@ const OtherProfilePage = () => {
           </p>
           <div className="flex space-x-2 mt-6">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push("/")}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
             >
               Volver

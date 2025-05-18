@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { FiArrowLeft, FiSettings, FiLogOut, FiChevronUp, FiChevronDown, FiCheck, FiX, FiSlash } from "react-icons/fi";
+import { FiArrowLeft, FiSettings, FiLogOut, FiChevronUp, FiChevronDown, FiCheck, FiX, FiSlash, FiMoreVertical } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { FiUserPlus } from "react-icons/fi";  // añade este import
 import ThemeToggle from "./ThemeToggle";
-import { createChat, retrieveMyChats } from "../ceramic/chatService";
+import { createChat, getChatMembers, retrieveMyChats } from "../ceramic/chatService";
 import { acceptFriendRequest, retrieveContacts, retrieveFriendRequests, sendFriendRequest } from "../ceramic/relationService";
 
 
-const SideBar = () => {
-  const [activeSection, setActiveSection] = useState<
+interface SideBarProps {
+  selectedChatId: string | null;
+  onSelectChat: (chatId: string) => void;
+}
+
+const SideBar: React.FC<SideBarProps> = ({ selectedChatId, onSelectChat }) => {  const [activeSection, setActiveSection] = useState<
     "main" | "contacts" | "chats" | "communities"
   >("main");
 
@@ -27,6 +31,9 @@ const SideBar = () => {
   const [availableContacts, setAvailableContacts] = useState<any[]>([]);
   const [selectedMembersForChat, setSelectedMembersForChat] = useState<string[]>([]);
   const [contactSearchTerm, setContactSearchTerm] = useState("");
+  const [chatMenuOpenFor, setChatMenuOpenFor] = useState<string | null>(null);
+  const [showMembersFor, setShowMembersFor] = useState<string | null>(null);
+  const [chatMembers, setChatMembers] = useState<{ username: string; userId: string }[]>([]);
 
   const router = useRouter();
 
@@ -45,6 +52,16 @@ const SideBar = () => {
     localStorage.removeItem("orbis:user");
     setIsSettingsOpen(false);
     router.push("/login"); // Redirigir a login después de cerrar sesión
+  };
+
+  const openMembersModal = async (chatId: string) => {
+    try {
+      const members:any = await getChatMembers(chatId);
+      setChatMembers(members);
+      setShowMembersFor(chatId);
+    } catch (e) {
+      console.error("Error cargando miembros de chat:", e);
+    }
   };
 
   // Obtener chats cuando se selecciona la sección "chats"
@@ -259,20 +276,21 @@ const handleCreateChat = async () => {
 
     {activeSection === "contacts" && (
       <>
-        <ul className="space-y-2">
-          {contacts.length > 0 ? (
-            contacts.map((c, i) => (
-              <li
-                key={i}
-                className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
-              >
-                {c.username || c.controller}
-              </li>
-            ))
-          ) : (
-            <p>No hay contactos.</p>
-          )}
-        </ul>
+          <ul className="space-y-2">
+      {contacts.length > 0 ? (
+        contacts.map((c, i) => (
+          <li
+            key={i}
+            onClick={() => router.push(`/profile/${c.stream_id}`)}
+            className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition cursor-pointer"
+          >
+            {c.username || c.controller}
+          </li>
+        ))
+      ) : (
+        <p>No hay contactos.</p>
+      )}
+    </ul>
 
         {/* BANDA DE PENDING */}
         <div
@@ -365,32 +383,90 @@ const handleCreateChat = async () => {
         </div>
       )}
 
-        {activeSection === "chats" && (
-          <>
-            {chats.length > 0 ? (
-              <ul className="space-y-2">
-                {chats.map((chat, index) => (
-                  <li
-                    key={index}
-                    className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
-                  >
-                    {chat.title || `Chat ${index + 1}`}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No hay chats disponibles.</p>
-            )}
-            <div className="mt-4">
-              <button
-                onClick={() => setIsCreateChatOpen(true)}
-                className="w-full p-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
-              >
-                Crear Chat
+{activeSection === "chats" && (
+        <>
+          <ul className="space-y-2">
+          {chats.map((chat) => {
+  const isSelected = chat.stream_id === selectedChatId;
+  return (
+    <li key={chat.stream_id} className="relative flex items-center">
+      <div
+        onClick={() => onSelectChat(chat.stream_id)}
+        className={`flex-1 px-3 py-3 rounded-l-lg cursor-pointer transition ${
+          isSelected
+            ? "bg-indigo-500 text-white"
+            : "bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600"
+        }`}
+      >
+        {chat.title || `Chat ${chat.stream_id.substring(0, 6)}`}
+      </div>
+      <button
+        onClick={() =>
+          setChatMenuOpenFor(
+            chatMenuOpenFor === chat.stream_id ? null : chat.stream_id
+          )
+        }
+        className={`px-3 py-3 rounded-r-lg flex items-center justify-center transition ${
+          isSelected
+            ? "bg-indigo-500 text-white"
+            : "bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600"
+        }`}
+      >
+        <FiMoreVertical className="text-xl" />
+      </button>
+                  {chatMenuOpenFor === chat.stream_id && (
+                    <div className="absolute right-0 mt-10 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50">
+                      <button
+                        onClick={() => {
+                          openMembersModal(chat.stream_id);
+                          setChatMenuOpenFor(null);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Ver miembros
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <button
+            onClick={() => setIsCreateChatOpen(true)}
+            className="mt-4 w-full p-3 bg-indigo-500 text-white rounded-lg"
+          >
+            Crear Chat
+          </button>
+        </>
+      )}
+
+      {/* Modal de miembros */}
+      {showMembersFor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-80 max-h-[80vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Miembros del chat</h3>
+              <button onClick={() => setShowMembersFor(null)}>
+                <FiX />
               </button>
             </div>
-          </>
-        )}
+            <ul className="space-y-2">
+              {chatMembers.map((m) => (
+                <li
+                  key={m.userId}
+                  onClick={() => {
+                    setShowMembersFor(null);
+                    router.push(`/profile/${m.userId}`);
+                  }}
+                  className="cursor-pointer px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                >
+                  {m.username}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
         {activeSection === "communities" && (
           <ul className="space-y-2">

@@ -5,6 +5,7 @@ import { OrbisConnectResult } from "@useorbis/db-sdk";
 import { tr } from "framer-motion/client";
 import * as jsonModels from "../ceramic/models.json";
 import { getMe } from "../ceramic/userService";
+import { retrieveMessages } from "../ceramic/messageService";
 
 
 const SamplePage = () => {
@@ -148,19 +149,19 @@ const SamplePage = () => {
         }
     }
 
-    const retrieveMessages = async () => {
-        const { columns, rows } = await orbis
-            .select()
-            .from(models.message)
-            .where(
-                {
-                    chatId: "kjzl6kcym7w8y8rs9islsickyk31iolkznk8zf2e5pgj6svd4nw0ihzr3r60p0e"
-                }
-            )
-            .context(contexts.whispy_test)
-            .run();
-        console.log("Retrieved messages:", rows);
-    };
+    // const retrieveMessages = async () => {
+    //     const { columns, rows } = await orbis
+    //         .select()
+    //         .from(models.message)
+    //         .where(
+    //             {
+    //                 chatId: "kjzl6kcym7w8y8rs9islsickyk31iolkznk8zf2e5pgj6svd4nw0ihzr3r60p0e"
+    //             }
+    //         )
+    //         .context(contexts.whispy_test)
+    //         .run();
+    //     console.log("Retrieved messages:", rows);
+    // };
     
     const retrieveMyChats = async () => {
         const userId = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")!)["stream_id"] : null;
@@ -206,6 +207,17 @@ const SamplePage = () => {
         }
     };
 
+    const handleGetMessages = async () => {
+        try {
+            const messages = await retrieveMessages("kjzl6kcym7w8y8rs9islsickyk31iolkznk8zf2e5pgj6svd4nw0ihzr3r60p0e");
+            console.log("Mensajes:", messages);
+            setResult(JSON.stringify(messages, null, 2));
+        } catch (error) {
+            console.error("Error al obtener los mensajes:", error);
+            setResult("Error al obtener los mensajes");
+        }
+    };
+
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -242,7 +254,7 @@ const SamplePage = () => {
             </button>
             <button 
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded mb-4" 
-                onClick={retrieveMessages}
+                onClick={handleGetMessages}
             >
                 Obtener mensajes de prueba
             </button>

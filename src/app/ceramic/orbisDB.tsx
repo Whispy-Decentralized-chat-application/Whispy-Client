@@ -35,5 +35,7 @@ export const isBcAddress = (value: string): boolean => {
 }
 
 
-
+export const isStreamId = (value: string): boolean => {
+    return /^[a-z0-9]{62}$/.test(value);
+  };
 

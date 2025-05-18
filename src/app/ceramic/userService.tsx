@@ -63,6 +63,24 @@ export const getUserByUsername = async (username: string): Promise<any> => {
     }
 }
 
+export const getUserById = async (userId: string): Promise<any> => {
+    const orbisSession = await db.getConnectedUser()
+    if (!orbisSession) throw new Error("No hay sesión de usuario activa")
+    try {
+        const result = await db
+        .select()
+        .from(models.user)
+        .where({ stream_id: userId })
+        .context(contexts.whispy_test)
+        .run()
+        console.log("Resultado de la consulta:", result)
+        return result.rows[0]
+    } catch (error) {
+        console.error("Error al obtener el perfil:", error)
+        throw new Error("Error al obtener el perfil")
+    }
+}
+
 export const registerUser = async (userName: string): Promise<any> => {
     console.log("Registrando usuario en OrbisDB")
     await db.getConnectedUser();
