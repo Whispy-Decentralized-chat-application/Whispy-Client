@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { FiArrowLeft, FiSettings, FiLogOut, FiChevronUp, FiChevronDown, FiCheck, FiX, FiSlash, FiMoreVertical } from "react-icons/fi";
+import { FiArrowLeft, FiSettings, FiLogOut, FiChevronUp, FiChevronDown, FiCheck, FiX, FiSlash, FiMoreVertical, FiChevronRight, FiChevronLeft, FiUsers, FiMenu } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { FiUserPlus } from "react-icons/fi";  // añade este import
 import ThemeToggle from "./ThemeToggle";
 import { createChat, getChatMembers, retrieveMyChats } from "../ceramic/chatService";
 import { acceptFriendRequest, retrieveContacts, retrieveFriendRequests, sendFriendRequest } from "../ceramic/relationService";
+import { createCommunity, retrieveMyCommunities, searchCommunities } from "../ceramic/communityService";
 
 
 interface SideBarProps {
@@ -34,6 +35,16 @@ const SideBar: React.FC<SideBarProps> = ({ selectedChatId, onSelectChat }) => { 
   const [chatMenuOpenFor, setChatMenuOpenFor] = useState<string | null>(null);
   const [showMembersFor, setShowMembersFor] = useState<string | null>(null);
   const [chatMembers, setChatMembers] = useState<{ username: string; userId: string }[]>([]);
+  const [communities, setCommunities] = useState<any[]>([]);
+  const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
+  const [newCommunityName, setNewCommunityName] = useState("");
+  const [newCommunityDesc, setNewCommunityDesc] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+  const [communityMenuOpen, setCommunityMenuOpen] = useState(false);
+  const [isExploreOpen, setIsExploreOpen] = useState(false);
+  const [exploreTerm, setExploreTerm] = useState("");
+  const [exploreResults, setExploreResults] = useState<any[]>([]);
+
 
   const router = useRouter();
 
@@ -79,7 +90,45 @@ const SideBar: React.FC<SideBarProps> = ({ selectedChatId, onSelectChat }) => { 
     if (activeSection === "chats") {
       fetchChats();
     }
+
+    if (activeSection === "communities") {
+      retrieveMyCommunities()
+        .then(rows => setCommunities(rows))
+        .catch(console.error);
+    }
   }, [activeSection]);
+
+  useEffect(() => {
+    if (!exploreTerm) {
+      setExploreResults([]);
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const rows = await searchCommunities(exploreTerm);
+        if (active) setExploreResults(rows);
+      } catch (e) {
+        console.error("Error buscando comunidades:", e);
+      }
+    })();
+    return () => { active = false };
+  }, [exploreTerm]);
+
+  const handleCreateCommunity = async () => {
+    if (!newCommunityName.trim()) return;
+    try {
+      await createCommunity(newCommunityName, newCommunityDesc);
+      setIsCreateCommunityOpen(false);
+      setNewCommunityName("");
+      setNewCommunityDesc("");
+      // refresca lista
+      const rows = await retrieveMyCommunities();
+      setCommunities(rows);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     if (isCreateChatOpen) {
@@ -210,9 +259,28 @@ const handleCreateChat = async () => {
   }
 };
 
+
+
+const openCommunityPopup = () => {
+  setCommunityMenuOpen((o) => !o);
+};
+
   return (
-    <div className="w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg flex flex-col overflow-hidden h-full">
+    <div
+      className={`flex flex-col bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                  shadow-lg overflow-hidden h-full transition-all duration-300
+                  ${collapsed ? "w-16" : "w-64"}`}
+    >
+      {/* Toggle button */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="m-2 p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition self-end"
+      >
+        {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
+      </button>
     {/* Contenido superior: Menú y secciones */}
+    {!collapsed && (
+        <>
     <div className="flex-grow">
       <div className="p-4 bg-gray-300 dark:bg-gray-700 flex items-center">
         {activeSection !== "main" && (
@@ -245,34 +313,67 @@ const handleCreateChat = async () => {
       >
         {activeSection === "main" && (
           <div className="space-y-4">
-           <div className="flex">
-           <button
+            <div className="flex">
+              <button
                 onClick={handleContactsClick}
                 className="flex-grow p-3 bg-blue-500 text-white rounded-l-lg hover:bg-blue-600 transition"
               >
                 Contactos
               </button>
-            <button
-              onClick={() => setIsAddContactOpen(true)}
-              className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 transition"
-            >
+              <button
+                onClick={() => setIsAddContactOpen(true)}
+                className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 transition"
+              >
               <FiUserPlus className="text-xl" />
-            </button>
-          </div>
-            <button
-              onClick={() => setActiveSection("chats")}
-              className="w-full p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-            >
-              Chats
-            </button>
-            <button
-              onClick={() => setActiveSection("communities")}
-              className="w-full p-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition"
-            >
-              Comunidades
-            </button>
-          </div>
-        )}
+              </button>
+              </div>
+                <button
+                  onClick={() => setActiveSection("chats")}
+                  className="w-full p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                >
+                  Chats
+                </button>
+                <div className="flex">
+                  <button
+                    onClick={() => setActiveSection("communities")}
+                    className="flex-grow p-3 bg-violet-500 text-white rounded-l-lg hover:bg-violet-600 transition"
+                  >
+                    Comunidades
+                  </button>
+                  <div className="flex relative">
+                  <button
+                    onClick={openCommunityPopup}
+                    className="p-3 bg-violet-500 text-white rounded-r-lg hover:bg-violet-600 transition"
+                  >
+                    <FiMenu className="text-xl" />
+                  </button>
+                  {communityMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50">
+                    <button
+                      onClick={() => {
+                        setIsCreateCommunityOpen(true);
+                        setCommunityMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                      Crear comunidad
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsExploreOpen(true);
+                        setCommunityMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Explorar comunidades
+                    </button>
+
+                  </div>
+                )}
+                </div>
+                </div>
+            </div>
+          )}
 
     {activeSection === "contacts" && (
       <>
@@ -468,20 +569,79 @@ const handleCreateChat = async () => {
         </div>
       )}
 
-        {activeSection === "communities" && (
+{activeSection === "communities" && (
+        <>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold">Mis comunidades</h3>
+            <button
+              onClick={() => setIsCreateCommunityOpen(true)}
+              className="px-3 py-1 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition flex"
+            >
+        +<FiUsers className="text-xl" /> 
+        </button>
+          </div>
           <ul className="space-y-2">
-            {["React Developers", "Gaming", "Fitness"].map(
-              (community, index) => (
+            {communities.length > 0 ? (
+              communities.map(c => (
                 <li
-                  key={index}
-                  className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+                  key={c.stream_id}
+                  onClick={() => router.push(`/community/${c.stream_id}`)}
+                  className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition cursor-pointer"
                 >
-                  {community}
+                  {c.name}
                 </li>
-              )
+              ))
+            ) : (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                No participas en ninguna comunidad.
+              </p>
             )}
           </ul>
-        )}
+        </>
+      )}
+
+{isCreateCommunityOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-80"
+          >
+            <h3 className="text-lg font-bold mb-4">Crear Comunidad</h3>
+            <input
+              type="text"
+              value={newCommunityName}
+              onChange={e => setNewCommunityName(e.target.value)}
+              placeholder="Nombre"
+              className="w-full p-2 border rounded-lg mb-3 bg-gray-100 dark:bg-gray-700"
+            />
+            <textarea
+              value={newCommunityDesc}
+              onChange={e => setNewCommunityDesc(e.target.value)}
+              placeholder="Descripción"
+              className="w-full p-2 border rounded-lg mb-4 bg-gray-100 dark:bg-gray-700"
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setIsCreateCommunityOpen(false)}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateCommunity}
+                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
+              >
+                Crear
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      
       </motion.div>
     </div>
 
@@ -652,8 +812,47 @@ const handleCreateChat = async () => {
       </motion.div>
     </div>
   )}
+  </>
+      )}
+       {isExploreOpen && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20 z-50">
+      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 rounded-lg shadow-lg w-96 max-h-[80vh] overflow-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold">Explorar comunidades</h3>
+          <button onClick={() => setIsExploreOpen(false)}>
+            <FiX />
+          </button>
+        </div>
+        <input
+          type="text"
+          value={exploreTerm}
+          onChange={e => setExploreTerm(e.target.value)}
+          placeholder="Buscar..."
+          className="w-full mb-4 p-2 border rounded-lg bg-gray-100 dark:bg-gray-700"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          {exploreResults.map(c => (
+            <div
+              key={c.stream_id}
+              onClick={() => {
+                setIsExploreOpen(false);
+                router.push(`/community/${c.stream_id}`);
+              }}
+              className="cursor-pointer p-3 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-center"
+            >
+              {c.name}
+            </div>
+          ))}
+          {exploreTerm && exploreResults.length === 0 && (
+            <p className="col-span-2 text-center text-sm text-gray-500">No hay resultados</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )}
     </div>
   );
+  
 };
 
 export default SideBar;

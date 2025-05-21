@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { FiUser } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { searchUsersByUsername } from "../ceramic/relationService";
+import { searchUsersByUsername } from "../ceramic/userService";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);

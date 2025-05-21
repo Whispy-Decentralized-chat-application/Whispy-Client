@@ -329,6 +329,33 @@
             "required": ["requester", "userPeer", "type", "lastMod"],
             "additionalProperties": false
         }
+    },
+
+    "community_membership": {
+        "name": "community_membership",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+          "type": "object",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$defs":{
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                }
+            },
+          "properties": {
+            "communityId": { "$ref": "#/$defs/CeramicStreamID" },
+            "userId": { "$ref": "#/$defs/CeramicStreamID" },
+            "active": { "type": "boolean" }
+          },
+          "required": ["communityId","userId", "active"],
+          "additionalProperties": false
+        }
     }
 
 }

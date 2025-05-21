@@ -95,3 +95,21 @@ export const registerUser = async (userName: string): Promise<any> => {
     .context(contexts.whispy_test)
     .run()
 }
+
+export const searchUsersByUsername = async (username: string) => {
+    const userModel = models.user
+    const { columns, rows } = await db
+        .select()
+        .context(contexts.whispy_test)
+        .raw(
+            `
+            SELECT *
+            FROM "${userModel}"
+            WHERE username ILIKE $1;
+            `,
+            [`%${username}%`]
+        )
+        .run()
+
+    return rows
+}

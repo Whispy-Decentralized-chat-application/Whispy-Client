@@ -165,24 +165,6 @@ export const retrieveContacts = async () => {
   
     return rows
   }
-  
-export const searchUsersByUsername = async (username: string) => {
-    const userModel = models.user
-    const { columns, rows } = await db
-        .select()
-        .context(contexts.whispy_test)
-        .raw(
-            `
-            SELECT *
-            FROM "${userModel}"
-            WHERE username ILIKE $1;
-            `,
-            [`%${username}%`]
-        )
-        .run()
-
-    return rows
-}
 
 export const isFriend = async (otherStreamId: string): Promise<boolean> => {
     // 1. Obtén tu stream_id de usuario
