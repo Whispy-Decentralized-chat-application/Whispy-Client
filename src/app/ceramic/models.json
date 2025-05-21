@@ -179,12 +179,9 @@
             "properties": {
                 "writer": { "$ref": "#/$defs/CeramicStreamID" },
                 "postId": { "$ref": "#/$defs/CeramicStreamID" },
-                "content": { "type": "string" },
-                "likes": { "type": "array",
-                    "items": { "$ref": "#/$defs/CeramicStreamID" }
-                }
+                "content": { "type": "string" }
             },
-            "required": ["postId", "content"],
+            "required": ["postId", "content", "writer"],
             "additionalProperties": false
         }
     },
@@ -365,7 +362,8 @@
             },
             "properties": {
                 "userId": { "$ref": "#/$defs/CeramicStreamID" },
-                "objectId": { "$ref": "#/$defs/CeramicStreamID" }
+                "objectId": { "$ref": "#/$defs/CeramicStreamID" },
+                "active": { "type": "boolean" }
             },
             "required": ["userId", "objectId"],
             "additionalProperties": false

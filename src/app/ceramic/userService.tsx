@@ -30,7 +30,6 @@ export const getMe = async (): Promise<any> => {
 
 export const getUserByBcAdress = async (bc_adress: string): Promise<any> => {
 
-    debugger
     const orbisSession = await db.getConnectedUser()
     if (!orbisSession) throw new Error("No hay sesión de usuario activa")
     const did = parseToDid(bc_adress)

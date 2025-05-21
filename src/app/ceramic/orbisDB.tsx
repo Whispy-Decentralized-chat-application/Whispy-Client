@@ -21,11 +21,11 @@ export const models = {
     chat_membership: "kjzl6hvfrbw6c96ay1rq9lrhphbucxp50v1nt9f0qiekmuz3xisuj5dodbz7wiu",
     relationship: "kjzl6hvfrbw6caqpydfv3pha16j2xwazbpiul8ngwhqp9k96bgmiwwd5ooja2y1",
     post: "kjzl6hvfrbw6c8dso5240upq70fg5wcandt6mdp6hw1mcg3vsab30wu4pkcmm9o",
-    reply: "kjzl6hvfrbw6c5pyb21urezl2fq63yv8stjl3c084pgywyuqdkn5606nngdlidu",
+    reply: "kjzl6hvfrbw6c83a87k89y2fhbvg4kfkkctmve90190wqw64avxsfnt2y7dthzo",
     report: "kjzl6hvfrbw6c8w03cwe36w50h9nor6b1fskkbq8xto7sic3sufxgl1zubhif86",
     friend_event: "kjzl6hvfrbw6cb47msvvz67oa9sn4qstv6xtxknuxt139t28sm9kdz5u6di67qd",
     community_membership: "kjzl6hvfrbw6c8pfql1t5a5g9bz4j9pooblj4fiaqp9d6xp3tip4aimpn2x7mti",
-    likes: "kjzl6hvfrbw6c8ge505fnr9g7wuvnuxw97zcgd5pvhuodyt73lvs7o27ee3ygd1"
+    likes: "kjzl6hvfrbw6ca183u047jwtirl8u6gdzt747nmzuhf169i1tt7yzn8dfron1ok"
 }
 
 export const contexts = {

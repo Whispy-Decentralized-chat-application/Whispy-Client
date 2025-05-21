@@ -77,7 +77,7 @@ export const leaveCommunity = async (communityId: string) => {
         const userId = localStorage.getItem("orbis:user") ? JSON.parse(localStorage.getItem("orbis:user")!)["stream_id"] : null;
         console.log("User ID:", userId);
         await db.getConnectedUser();
-        debugger;
+        ;
         const existingCM = await db
             .select()
             .context(contexts.whispy_test)

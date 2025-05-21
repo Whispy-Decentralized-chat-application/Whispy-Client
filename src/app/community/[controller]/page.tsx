@@ -11,6 +11,7 @@ const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
 import { getUserByBcAdress } from "@/app/ceramic/userService";
 import { parseToBcAddress } from "@/app/ceramic/orbisDB";
+import PostCard from "@/app/components/post-card";
 
 
 
@@ -125,28 +126,9 @@ const CommunityPage: React.FC = () => {
 
       {/* Posts */}
       <div className="pt-20 px-4 space-y-4 pb-32">
-        {posts.length > 0 ? (
-          posts.map((post) => (
-            <div
-              key={post.stream_id}
-              className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
-            >
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  {post.username}
-                </h2>
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                {new Date(post.date).toLocaleString("es-ES", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
-              </div>
-              <div
-                className="text-base text-gray-900 dark:text-gray-100"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
-            </div>
+      {posts.length > 0 ? (
+  posts.map((post) => (
+      <PostCard key={post.stream_id} post={post} />
           ))
         ) : (
           <p className="text-center text-gray-500 dark:text-gray-400">
@@ -156,9 +138,9 @@ const CommunityPage: React.FC = () => {
       </div>
 
       {/* Floating Add Button */}
-      <div className="fixed bottom-6 left-6">
+      <div className="fixed bottom-6 right-6">  {/* ← moved from left-6 to right-6 */}
         <motion.button
-          onClick={() => setEditorOpen((o) => !o)}
+          onClick={() => setEditorOpen(o => !o)}
           className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-lg"
           whileTap={{ scale: 0.9 }}
         >
@@ -171,7 +153,8 @@ const CommunityPage: React.FC = () => {
   {editorOpen && (
     <motion.div
       className="
-        fixed inset-x-6 bottom-20
+        fixed bottom-20
+        right-6 left-auto
         max-w-3xl w-[calc(100%-3rem)] h-[60vh]
         p-6 bg-white dark:bg-gray-800
         rounded-2xl shadow-2xl z-20

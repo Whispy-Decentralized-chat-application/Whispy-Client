@@ -62,7 +62,6 @@ const Login = () => {
       const authResult = await orbis.connectUser({ auth });
 
       if (authResult) {
-        debugger;
         console.log("Autenticación exitosa:", authResult);
         router.push("/register");
       } else {

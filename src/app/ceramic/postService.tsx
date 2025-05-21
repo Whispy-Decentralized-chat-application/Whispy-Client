@@ -37,3 +37,18 @@ export const createPost = async (content:string, communityId:string, title:strin
         console.error("Error creating post:", error)
     }
 }
+
+export const retrievePost:any = async (postId: string) => {
+    const { columns, rows } = await db
+        .select()
+        .context(contexts.whispy_test)
+        .from(models.post)
+        .where(
+            {
+                stream_id: postId
+            }
+        )
+        .run()
+    console.log("Retrieved post:", rows[0])
+    return rows[0];
+}
