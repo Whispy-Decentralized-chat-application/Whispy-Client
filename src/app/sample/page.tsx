@@ -23,7 +23,7 @@ const SamplePage = () => {
 
     const createModel = async () => {
         try {
-            const model:any = jsonModels.community_membership;
+            const model:any = jsonModels.likes;
             const response = await orbis.ceramic.createModel(model);
             console.log("Modelo creado:", response);
         } catch (error) {

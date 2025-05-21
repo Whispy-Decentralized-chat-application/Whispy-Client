@@ -1,14 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FiArrowLeft, FiPlus, FiX } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import { getCommunityById, joinCommunity } from "@/app/ceramic/communityService";
-import { retrieveCommunityPosts } from "@/app/ceramic/postService";
+import { checkJoined, getCommunityById, joinCommunity, leaveCommunity } from "@/app/ceramic/communityService";
+import { createPost, retrieveCommunityPosts } from "@/app/ceramic/postService";
 import dynamic from "next/dynamic";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
+import { getUserByBcAdress } from "@/app/ceramic/userService";
+import { parseToBcAddress } from "@/app/ceramic/orbisDB";
 
 
 
@@ -20,19 +22,53 @@ const CommunityPage: React.FC = () => {
   const [community, setCommunity] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [showBanner, setShowBanner] = useState(true);
+  const [joined, setJoined] = useState(false);    
 
   // estado editor
   const [editorOpen, setEditorOpen] = useState(false);
   const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");             
 
-  
+  const quillRef = useRef<any>(null);
+
 
   useEffect(() => {
-    ;(async () => {
-      const data = await getCommunityById(controller);
-      setCommunity(data);
-      const p = await retrieveCommunityPosts(controller);
-      setPosts(p);
+    (async () => {
+      setJoined(await checkJoined(controller));
+    })();
+  }, [controller]);
+
+  const handleToggleJoin = async () => {
+    if (joined) {
+      await leaveCommunity(controller);
+      setJoined(false);
+    } else {
+      await joinCommunity(controller);
+      setJoined(true);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      const communityData = await getCommunityById(controller);
+      setCommunity(communityData);
+  
+      const rawPosts = await retrieveCommunityPosts(controller);
+      const postsConUser = await Promise.all(
+        rawPosts.map(async post => {
+          // parseToBcAddress puede devolver null, así que lo chequeamos
+          const bcAddress = parseToBcAddress(post.controller);
+          let username = "Desconocido";
+
+          if (bcAddress) {
+            const user = await getUserByBcAdress(bcAddress);
+            username = user.username;
+          }
+
+          return { ...post, username };
+        })
+      );
+      setPosts(postsConUser);
     })();
   }, [controller]);
 
@@ -48,11 +84,12 @@ const CommunityPage: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
-    //await createPost(controller, content);
+    await createPost(content, controller, title);
     const p = await retrieveCommunityPosts(controller);
     setPosts(p);
     setContent("");
     setEditorOpen(false);
+    console.log("Publicar:", content);
   };
 
   return (
@@ -74,10 +111,14 @@ const CommunityPage: React.FC = () => {
             {community?.name || "Cargando..."}
           </h1>
           <button
-            onClick={handleJoin}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+            onClick={handleToggleJoin}              // ← usamos el toggle
+            className={`px-4 py-2 rounded-lg transition 
+              ${joined 
+                ? "bg-red-500 hover:bg-red-600 text-white" 
+                : "bg-blue-500 hover:bg-blue-600 text-white"
+              }`}
           >
-            Unirme
+            {joined ? "Salir" : "Unirme"}       
           </button>
         </div>
       </div>
@@ -87,9 +128,14 @@ const CommunityPage: React.FC = () => {
         {posts.length > 0 ? (
           posts.map((post) => (
             <div
-              key={post.id}
+              key={post.stream_id}
               className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
             >
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  {post.username}
+                </h2>
+              </div>
               <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                 {new Date(post.date).toLocaleString("es-ES", {
                   dateStyle: "medium",
@@ -138,16 +184,30 @@ const CommunityPage: React.FC = () => {
       exit={{ opacity: 0, y: 50 }}
       transition={{ duration: 0.2 }}
     >
+      {/* Input de título */}
+      <input
+              type="text"
+              placeholder="Título del post…"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mb-4 p-2 border rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            />
+
       <ReactQuill
         theme="snow"
         value={content}
         onChange={setContent}
         modules={{
-          toolbar: [
-            ["bold", "italic", "underline", "strike"],
-            [{ list: "ordered" }, { list: "bullet" }],
-            ["link", "image"],
-          ],
+          toolbar: {
+            container: [
+              ["bold", "italic", "underline", "strike"],
+              [{ list: "ordered" }, { list: "bullet" }],
+              ["link", "image"],
+            ],
+            // handlers: {
+            //   image: imageHandler,     // ← aquí inyectas tu handler
+            // },
+          },
         }}
         className="
           flex flex-col         /* hace que toolbar + container sean hijos flexibles */

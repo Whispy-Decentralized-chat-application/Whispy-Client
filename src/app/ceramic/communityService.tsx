@@ -1,5 +1,6 @@
 import { col } from "framer-motion/client";
 import { contexts, db, models } from "./orbisDB";
+import { catchError } from "@useorbis/db-sdk/util";
 
 export const retrieveMyCommunities = async () => {
     const userId = localStorage.getItem("orbis:user") ? JSON.parse(localStorage.getItem("orbis:user")!)["stream_id"] : null;
@@ -15,7 +16,7 @@ export const retrieveMyCommunities = async () => {
         FROM "${communityModel}" AS c
         JOIN "${communityMembershipModel}" AS cm
             ON cm."communityId"   = c.stream_id
-        WHERE cm."userId" = $1;
+        WHERE cm."userId" = $1 AND cm.active = true;
 
         `,
         [userId]
@@ -40,23 +41,6 @@ export const joinCommunity = async (communityId: string) => {
             active: true
         };
 
-        const insertedMembership = await db.insert(models.community_membership)
-            .value(community_membershipData)
-            .context(contexts.whispy_test)
-            .run();
-        console.log("Community membership created successfully:", insertedMembership);
-
-    } catch (error) {
-        console.error("Error creating community membership:", error);
-    }
-}
-
-export const leaveCommunity = async (communityId: string) => {
-    try {
-        const userId = localStorage.getItem("orbis:user") ? JSON.parse(localStorage.getItem("orbis:user")!)["stream_id"] : null;
-        console.log("User ID:", userId);
-        await db.getConnectedUser();
-
         const existingCM = await db
             .select()
             .context(contexts.whispy_test)
@@ -70,19 +54,57 @@ export const leaveCommunity = async (communityId: string) => {
             .run();
 
         if (existingCM.rows.length > 0) {
-            const community_membershipData = {
-                ...existingCM.rows[0],
-                active: false
-            };
-
-            const updatedMembership = await db.update(models.community_membership)
-                .set(community_membershipData)
+            const cm = existingCM.rows[0]
+            const updatedMembership = await db.update(cm.stream_id)
+                .set({ active: true })
                 .run();
             console.log("Community membership updated successfully:", updatedMembership);
+        } else {
+            const insertedMembership = await db.insert(models.community_membership)
+                .value(community_membershipData)
+                .context(contexts.whispy_test)
+                .run();
+            console.log("Community membership created successfully:", insertedMembership);
         }
 
     } catch (error) {
         console.error("Error creating community membership:", error);
+    }
+}
+
+export const leaveCommunity = async (communityId: string) => {
+    try {
+        const userId = localStorage.getItem("orbis:user") ? JSON.parse(localStorage.getItem("orbis:user")!)["stream_id"] : null;
+        console.log("User ID:", userId);
+        await db.getConnectedUser();
+        debugger;
+        const existingCM = await db
+            .select()
+            .context(contexts.whispy_test)
+            .from(models.community_membership)
+            .where(
+                {
+                    communityId: communityId,
+                    userId: userId
+                }
+            )
+            .run();
+
+
+            if (existingCM.rows.length > 0) {
+
+                const cm = existingCM.rows[0]
+
+                const updatedMembership = await db.update(cm.stream_id)
+                .set({active: false})
+                .run();
+                console.log("Community membership updated successfully:", updatedMembership);
+            
+                
+            }
+
+    } catch (error) {
+        console.error("Error updating community membership:", error);
     }
 }
 
@@ -153,4 +175,24 @@ export const getCommunityById = async (communityId: string) => {
         .run();
     console.log("Retrieved community:", rows);
     return rows[0];
+}
+
+export const checkJoined = async (communityId: string) => {
+    const userId = localStorage.getItem("orbis:user") ? JSON.parse(localStorage.getItem("orbis:user")!)["stream_id"] : null;
+    console.log("User ID:", userId);
+    await db.getConnectedUser();
+
+    const existingCM = await db
+        .select()
+        .context(contexts.whispy_test)
+        .from(models.community_membership)
+        .where(
+            {
+                communityId: communityId,
+                userId: userId
+            }
+        )
+        .run();
+
+    return existingCM.rows ? existingCM.rows[0].active : false;
 }

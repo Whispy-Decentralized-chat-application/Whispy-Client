@@ -141,15 +141,7 @@
                     "title": "CeramicStreamID",
                     "maxLength": 100
                 },
-                "Attachment": {
-                    "type": "object",
-                    "properties": {
-                        "content": { "type": "string" },
-                        "type": { "type": "string" }
-                    },
-                    "required": ["content", "type"],
-                    "additionalProperties": false
-                },
+
                 "DateTime": {
                     "type": "string",
                     "title": "DateTime",
@@ -161,13 +153,9 @@
                 "title": { "type": "string" },
                 "content": { "type": "string" },
                 "date": { "$ref": "#/$defs/DateTime" },
-                "attachment": { "$ref": "#/$defs/Attachment" },
-                "communityId": { "$ref": "#/$defs/CeramicStreamID" },
-                "likes": { "type": "array",
-                    "items": { "$ref": "#/$defs/CeramicStreamID" }
-                }
+                "communityId": { "$ref": "#/$defs/CeramicStreamID" }
             },
-            "required": ["title", "content", "attachment", "communityId", "date"],
+            "required": ["title", "content", "communityId", "date"],
             "additionalProperties": false
         }
     },
@@ -355,6 +343,32 @@
           },
           "required": ["communityId","userId", "active"],
           "additionalProperties": false
+        }
+    },
+
+    "likes": {
+        "name": "likes",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "list" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                }
+            },
+            "properties": {
+                "userId": { "$ref": "#/$defs/CeramicStreamID" },
+                "objectId": { "$ref": "#/$defs/CeramicStreamID" }
+            },
+            "required": ["userId", "objectId"],
+            "additionalProperties": false
         }
     }
 
