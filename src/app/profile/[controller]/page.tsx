@@ -5,6 +5,8 @@ import { FiUserPlus } from "react-icons/fi";
 import { getUserByBcAdress, getUserById, getUserByUsername } from "@/app/ceramic/userService";
 import { isFriend, sendFriendRequest } from "@/app/ceramic/relationService";
 import { isStreamId } from "@/app/ceramic/orbisDB";
+import { a } from "framer-motion/client";
+import { reportObject } from "@/app/ceramic/reportService";
 
 interface Profile {
   stream_id: string;
@@ -17,6 +19,8 @@ const OtherProfilePage = () => {
   const { controller } = useParams();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [canAdd, setCanAdd] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
   const router = useRouter();
 
   // Obtener perfil
@@ -71,6 +75,22 @@ const OtherProfilePage = () => {
     }
   };
 
+  const handleReportClick = () => {
+    setIsReportOpen(true);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!profile || !reportReason.trim()) return;
+    try {
+     await reportObject(profile.stream_id, reportReason);
+      console.log("Report sent:", profile.stream_id, reportReason);
+      setIsReportOpen(false);
+      setReportReason("");
+    } catch (err) {
+      console.error("Error reporting user:", err);
+    }
+  };
+
   if (!profile) return null;
 
   return (
@@ -111,15 +131,51 @@ const OtherProfilePage = () => {
             )}
 
             <button
-              onClick={() => {}}
+              onClick={handleReportClick}
               className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
             >
               Reportar
             </button>
+            {/* Report Modal */}
+      {isReportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-200">
+              Reportar usuario
+            </h3>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Explícanos la razón del reporte…"
+              className="w-full h-24 p-2 border rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <button
+                onClick={() => {
+                  setIsReportOpen(false);
+                  setReportReason("");
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
           </div>
         </div>
       </div>
     </div>
+
+
+    
   );
 };
 

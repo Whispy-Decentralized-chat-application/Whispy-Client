@@ -38,6 +38,32 @@ export default function PostPage() {
   const [sending, setSending] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
 
+
+  const fetchReplies = async () => {
+    try {
+      const fetched = await retrieveReplies(postId);
+      const mapped = await Promise.all(
+        fetched.map(async (r: any) => {
+          let username = "Desconocido";
+          const bcAddress = r.writer ? parseToBcAddress(r.writer) : null;
+          if (bcAddress) {
+            const user = await getUserByBcAdress(bcAddress);
+            username = user.username;
+          }
+          return {
+            stream_id: r.stream_id,
+            content: r.content,
+            date: r.indexed_at,
+            username,
+          };
+        })
+      );
+      setReplies(mapped);
+    } catch (err) {
+      console.error("Error fetching replies:", err);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -87,7 +113,8 @@ export default function PostPage() {
     setSending(true);
     try {
       await replyToPost(postId, newReply);
-      
+      await fetchReplies();          // ← refresca las respuestas
+      setNewReply("<p></p>");        // ← limpia el editor
     } catch (err) {
       console.error("Error sending reply:", err);
     } finally {

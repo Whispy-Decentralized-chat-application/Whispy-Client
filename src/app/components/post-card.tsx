@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiChevronDown, FiChevronUp, FiHeart, FiMessageCircle } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiFlag, FiHeart, FiMessageCircle } from "react-icons/fi";
 import { checkLike, getNumberOfLikes, underlikeObject, likeObject } from "../ceramic/likeService";
 import { getNumberOfReplies } from "../ceramic/replyService";
+import { reportObject } from "../ceramic/reportService";
 
 
 interface Post {
@@ -19,6 +20,8 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [replyCount, setReplyCount] = useState(0);
+  const [isReportOpen, setIsReportOpen] = useState(false);   
+  const [reportReason, setReportReason] = useState("");         
   const router = useRouter();
 
   useEffect(() => {
@@ -45,6 +48,18 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
       setLiked(true);
       setLikeCount((count) => count + 1);
     }
+  };
+
+  const handleReport = () => {
+    setIsReportOpen(true);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportReason.trim()) return;
+    await reportObject(post.stream_id, reportReason);
+    console.log("Report post:", post.stream_id, reportReason);
+    setIsReportOpen(false);
+    setReportReason("");
   };
 
   const navigateToPost = () => {
@@ -109,6 +124,13 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
               {replyCount}
             </span>
           </button>
+          {/* Report */}
+          <button
+            onClick={handleReport}
+            className="flex items-center ml-4 focus:outline-none"
+          >
+            <FiFlag className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400" size={20} />
+          </button>
         </div>
 
         <button
@@ -121,6 +143,39 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
           </span>
         </button>
       </div>
+      {/* Report Modal */}
+      {isReportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-200">
+              Reportar publicación
+            </h3>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Motivo del reporte…"
+              className="w-full h-24 p-2 border rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <button
+                onClick={() => {
+                  setIsReportOpen(false);
+                  setReportReason("");
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
