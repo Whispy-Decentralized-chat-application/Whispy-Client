@@ -50,7 +50,7 @@ const Header = () => {
   }, [searchTerm]);
 
   return (
-    <header className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-4 shadow-md flex items-center relative">
+    <header className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 b-2 shadow-md flex items-center relative">
       <div className="flex items-center">
         <img src="Whispy.png" alt="Logo" className="h-20 w-20" />
         <h1 className="text-xl font-bold ml-2">Whispy</h1>
@@ -85,8 +85,7 @@ const Header = () => {
       </div>
 
       {/* avatar y menú */}
-      <div className="flex items-center space-x-4">
-        <ThemeToggle />
+      <div className="flex items-center space-x-4 mr-4">
         <div className="relative" ref={menuRef}>
           <FiUser
             className="h-8 w-8 cursor-pointer"

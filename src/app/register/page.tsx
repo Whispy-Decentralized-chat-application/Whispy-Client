@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiSun, FiMoon } from "react-icons/fi";
@@ -10,6 +10,23 @@ const Register = () => {
   const [error, setError] = useState("");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const router = useRouter();
+
+
+  useEffect(() => {
+    if(typeof window !== "undefined" && localStorage.getItem("orbis:user")){ 
+      router.push("/");
+    }
+  }, [router]);
+
+  useEffect(() => {
+      const onStorage = (e: StorageEvent) => {
+        if (e.key === "orbis:user" && e.newValue) {
+          router.push("/");
+        }
+      };
+      window.addEventListener("storage", onStorage);
+      return () => window.removeEventListener("storage", onStorage);
+    }, [router]);
 
   useEffect(() => {
     // Configurar tema
@@ -24,7 +41,6 @@ const Register = () => {
     // Verificar sesión o perfil de usuario
     const fetchUser = async () => {
       const session = localStorage.getItem("orbis:session");
-      console.log("hola")
       let userProfile:any;
       try {
         userProfile = localStorage.getItem("orbis:user");
@@ -34,6 +50,7 @@ const Register = () => {
         }else {
           const user = await getMe();
           localStorage.setItem("orbis:user", JSON.stringify(user));
+          router.push("/"); // Redirige si hay perfil
         }
       } catch (error) {
         if (!session) {
@@ -43,7 +60,7 @@ const Register = () => {
     };
 
     fetchUser();
-  });
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
