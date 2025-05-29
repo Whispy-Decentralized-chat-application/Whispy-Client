@@ -368,6 +368,34 @@
             "required": ["userId", "objectId"],
             "additionalProperties": false
         }
+    },
+    "whispy_user": {
+        "name": "whispy_user",
+        "version": "2.0",
+        "interface": false,
+        "immutableFields": [],
+        "implements": [],
+        "accountRelation": { "type": "single" },
+        "schema": {
+            "type": "object",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+                "CeramicStreamID": {
+                    "type": "string",
+                    "title": "CeramicStreamID",
+                    "maxLength": 100
+                }
+            },
+            "properties": {
+                "username": { "type": "string" },
+                "bio": { "type": "string" },
+                "profilePicture": { "type": "string" },
+                "isPrivate": { "type": "boolean" },
+                "publicKey": { "type": "string" }
+            },
+            "required": ["username", "isPrivate", "publicKey"],
+            "additionalProperties": false
+        }
     }
 
 }

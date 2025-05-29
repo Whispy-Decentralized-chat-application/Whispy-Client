@@ -194,5 +194,12 @@ export const checkJoined = async (communityId: string) => {
         )
         .run();
 
+    console.log("Existing community membership:", existingCM);
+
+    if (!existingCM || !existingCM.rows || existingCM.rows.length === 0) {
+        console.log("No membership found for this community.");
+        return false;
+    }
+
     return existingCM.rows ? existingCM.rows[0].active : false;
 }

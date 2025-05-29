@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "./components/header";
 import ChatList from "./components/chat-list";
@@ -7,35 +7,25 @@ import ChatInput from "./components/chat-input";
 import SideBar from "./components/side-bar";
 import { getMe } from "./ceramic/userService";
 import { retrieveMessages, sendMessage } from "./ceramic/messageService";
+import { useSession } from "@/context/SessionContext";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 const ChatApp = () => {
+  const { isUnlocked } = useSession();
+  useAuthRedirect(true, { isUnlocked });
   const [user, setUser] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const session = localStorage.getItem("orbis:session");
-      if (!session) {
-        router.push("/login");
-        return;
-      }
-      try {
-        const profile = await getMe();
-        if (!profile) {
-          router.push("/register");
-          return;
-        }
-        localStorage.setItem("orbis:user", JSON.stringify(profile));
-        setUser(profile.stream_id);
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-        router.push("/login");
-      }
-    };
-    fetchUser();
-  }, [router]);
+    const user = localStorage.getItem("orbis:user");
+    if (user) {
+      setUser(JSON.parse(user).stream_id);
+    } 
+  }
+  , [router]);
+
 
   // cuando cambia el chat seleccionado, cargamos mensajes
   useEffect(() => {

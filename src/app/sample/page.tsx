@@ -23,7 +23,7 @@ const SamplePage = () => {
 
     const createModel = async () => {
         try {
-            const model:any = jsonModels.likes;
+            const model:any = jsonModels.whispy_user;
             const response = await orbis.ceramic.createModel(model);
             console.log("Modelo creado:", response);
         } catch (error) {
@@ -226,7 +226,7 @@ const SamplePage = () => {
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded mb-4" 
                 onClick={createModel}
             >
-                Crear modelo
+                Crear modelo: {JSON.stringify(jsonModels.whispy_user.name)}
             </button>
             <button 
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded mb-4" 

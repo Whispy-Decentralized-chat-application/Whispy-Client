@@ -1,118 +1,102 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
+import { decryptWithPassword } from "../ceramic/criptoService";
+import { useSession } from "@/context/SessionContext";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { FiSun, FiMoon } from "react-icons/fi";
-import { Web3Provider } from "@ethersproject/providers";
-// Importa el SDK y el método de autenticación de OrbisDB (Ceramic)
-import { OrbisDB } from "@useorbis/db-sdk";
-import { OrbisEVMAuth } from "@useorbis/db-sdk/auth";
-import { db } from "../ceramic/orbisDB";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import Link from "next/link";
 
-// Extendemos la interfaz de Window para que reconozca ethereum
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
+const LOCAL_STORAGE_KEY = "orbis:key";
 
-const orbis = db; // Instancia global de OrbisDB
-
-const Login = () => {
-  const [error, setError] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [address, setAddress] = useState<string>("");
+export default function LoginPage() {
+    useAuthRedirect();
+  const { unlockSession } = useSession();
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const storedTheme = localStorage.getItem("theme") as "light" | "dark";
-    if (storedTheme) {
-      setTheme(storedTheme);
-      document.documentElement.classList.add(storedTheme);
-    } else {
-      document.documentElement.classList.add("light");
-    }
 
-    // Si ya hay sesión, redirige a la home
-    const session = localStorage.getItem("orbis:session");
-    if (session) {
-      router.push("/register");
-    }
-  }, [router]);
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    document.documentElement.classList.remove(theme);
-    document.documentElement.classList.add(newTheme);
-    localStorage.setItem("theme", newTheme);
-  };
-
-  const handleLogin = async () => {
-    if (!window.ethereum) {
-      setError("MetaMask no está instalado.");
-      return;
-    }
     try {
-      // Solicitar conexión a la wallet
-      const provider = window.ethereum;
-      // Creamos la instancia de autenticación con el provider de MetaMask
-      const auth = new OrbisEVMAuth(provider);
-      // Conectamos el usuario: esto firma la petición y obtiene su DID
-      const authResult = await orbis.connectUser({ auth });
-
-      if (authResult) {
-        console.log("Autenticación exitosa:", authResult);
-        router.push("/register");
-      } else {
-        setError("Error en la autenticación: " + authResult);
+      const encryptedPrivateKey = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!encryptedPrivateKey) {
+        setError(
+          "No se ha encontrado una clave privada almacenada. ¿Has creado ya tu cuenta?"
+        );
+        setLoading(false);
+        return;
       }
-    } catch (err: any) {
-      setError("Error en la autenticación con Ceramic.");
-      console.error(err);
+      const privKey = await decryptWithPassword(encryptedPrivateKey, password);
+      unlockSession(privKey);
+      router.push("/"); // Redirige al home después de desbloquear
+    } catch {
+      setError("Contraseña incorrecta o clave dañada.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  return (
-    <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md hover:shadow-lg transition-all duration-300"
+   return (
+    <main className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <form
+        onSubmit={handleLogin}
+        className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 space-y-6"
       >
-        {theme === "light" ? (
-          <FiMoon className="text-xl" />
-        ) : (
-          <FiSun className="text-xl" />
+        <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
+          Iniciar sesión
+        </h1>
+
+        <div>
+          <label
+            htmlFor="password"
+            className="block mb-1 font-medium text-gray-700 dark:text-gray-300"
+          >
+            Contraseña
+          </label>
+          <input
+            id="password"
+            type="password"
+            className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+          />
+          …
+        <div className="mt-2 text-right">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            ¿Has olvidado la contraseña? Recupera el acceso con tu clave privada{" "}
+            <Link
+              href="/recoverkey"
+              className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              aquí
+            </Link>
+            .
+          </span>
+        </div>
+…
+        </div>
+
+        {error && (
+          <p className="text-center text-sm text-red-500">{error}</p>
         )}
-      </button>
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-96"
-      >
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 text-center mb-4">
-          Iniciar Sesión con Wallet 
-        </h2>
-
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         <button
-          onClick={handleLogin}
-          className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition"
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
         >
-          Conectar y firmar con MetaMask
+          {loading ? "Desbloqueando..." : "Entrar"}
         </button>
-
-        {address && (
-          <p className="text-center text-gray-600 dark:text-gray-300 mt-4">
-            Conectado como: {address.slice(0, 6)}...{address.slice(-4)}
-          </p>
-        )}
-      </motion.div>
-    </div>
+      </form>
+    </main>
   );
-};
-
-export default Login;
+}

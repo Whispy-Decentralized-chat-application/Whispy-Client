@@ -1,3 +1,4 @@
+import { encryptWithPassword, generateKeyPair } from "./criptoService";
 import { contexts, db, models } from "./orbisDB"
 
 const parseToDid = (address: string): string => {
@@ -84,19 +85,41 @@ export const getUserById = async (userId: string): Promise<any> => {
     }
 }
 
-export const registerUser = async (userName: string): Promise<any> => {
+export const registerUser = async (userName: string, password: string): Promise<any> => {
     console.log("Registrando usuario en OrbisDB")
     await db.getConnectedUser();
+
+    const { publicKey, privateKey } = await generateKeyPair();
+
+    const encriptedPrivateKey = await encryptWithPassword(privateKey, password);
+    localStorage.setItem("orbis:key", encriptedPrivateKey);
+
     const user = {
         username: userName,
         isPrivate: false,
-        bio: ""
+        bio: "",
+        publicKey: publicKey
     }
-    const result = await db
-    .insert(models.user)
-    .value(user)
-    .context(contexts.whispy_test)
-    .run()
+
+    try {
+
+        const result = await db
+        .insert(models.user)
+        .value(user)
+        .context(contexts.whispy_test)
+        .run()
+
+        console.log("Usuario registrado exitosamente:", result);
+
+        const localuser = await getMe();
+        localStorage.setItem("orbis:user", JSON.stringify(localuser));
+    
+        return privateKey;
+    } catch (error) {
+        console.error("Error al registrar el usuario:", error);
+        throw new Error("Error al registrar el usuario");
+    }
+
 }
 
 export const searchUsersByUsername = async (username: string) => {
@@ -116,3 +139,4 @@ export const searchUsersByUsername = async (username: string) => {
 
     return rows
 }
+

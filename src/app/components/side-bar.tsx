@@ -379,9 +379,9 @@ const openCommunityPopup = () => {
       <>
           <ul className="space-y-2">
       {contacts.length > 0 ? (
-        contacts.map((c, i) => (
+        contacts.map((c) => (
           <li
-            key={i}
+            key={c.stream_id}
             onClick={() => router.push(`/profile/${c.stream_id}`)}
             className="p-3 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition cursor-pointer"
           >

@@ -72,50 +72,50 @@ export const retrieveFriendRequests = async (): Promise<
   const userModel = models.user
   const friendEventModel = models.friend_event
 
-  // 2. Consulta las peticiones activas más recientes por usuario,
-  //    excluyendo las ya aceptadas o rechazadas/bloqueadas después
   const { rows } = await db
     .select()
     .context(contexts.whispy_test)
     .raw(
       `
-      SELECT DISTINCT ON (r.requester)
-        u.username,
-        r.requester   AS "userStream",
-        r.stream_id   AS "eventToRespond"
+      SELECT DISTINCT ON (r."requester")
+        u."username",
+        r."requester"   AS "userStream",
+        r."stream_id"   AS "eventToRespond"
       FROM "${friendEventModel}" AS r
       JOIN "${userModel}" AS u
-        ON u.stream_id = r.requester
-      WHERE r.userPeer = $1
-        AND r.type = 'REQUEST'
+        ON u."stream_id" = r."requester"
+      WHERE r."userPeer" = $1
+        AND r."type" = 'REQUEST'
         -- No esté ya aceptada
         AND NOT EXISTS (
           SELECT 1
           FROM "${friendEventModel}" AS a
-          WHERE a.type      = 'ACCEPT'
-            AND a.eventPeer = r.stream_id
+          WHERE a."type"      = 'ACCEPT'
+            AND a."eventPeer" = r."stream_id"
         )
         -- No haya un REJECT más reciente
         AND NOT EXISTS (
           SELECT 1
           FROM "${friendEventModel}" AS rej
-          WHERE rej.type      = 'REJECT'
-            AND rej.eventPeer = r.stream_id
-            AND rej.lastMod   > r.lastMod
+          WHERE rej."type"      = 'REJECT'
+            AND rej."eventPeer" = r."stream_id"
+            AND rej."lastMod"   > r."lastMod"
         )
         -- No esté bloqueada por mí
         AND NOT EXISTS (
           SELECT 1
           FROM "${friendEventModel}" AS b
-          WHERE b.type       = 'BLOCK'
-            AND b.requester  = $1
-            AND b.userPeer   = r.requester
+          WHERE b."type"       = 'BLOCK'
+            AND b."requester"  = $1
+            AND b."userPeer"   = r."requester"
         )
-      ORDER BY r.requester, r.lastMod DESC;
+      ORDER BY r."requester", r."lastMod" DESC;
       `,
       [userId]
     )
     .run()
+
+  console.log("Friend requests:", rows)
 
   return rows.map(row => ({
     username: row.username,
@@ -123,6 +123,7 @@ export const retrieveFriendRequests = async (): Promise<
     eventToRespond: row.eventToRespond,
   }))
 }
+
 
 
   
