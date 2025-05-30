@@ -23,7 +23,7 @@ const SamplePage = () => {
 
     const createModel = async () => {
         try {
-            const model:any = jsonModels.whispy_user;
+            const model:any = jsonModels.message;
             const response = await orbis.ceramic.createModel(model);
             console.log("Modelo creado:", response);
         } catch (error) {
@@ -207,16 +207,16 @@ const SamplePage = () => {
         }
     };
 
-    const handleGetMessages = async () => {
-        try {
-            const messages = await retrieveMessages("kjzl6kcym7w8y8rs9islsickyk31iolkznk8zf2e5pgj6svd4nw0ihzr3r60p0e");
-            console.log("Mensajes:", messages);
-            setResult(JSON.stringify(messages, null, 2));
-        } catch (error) {
-            console.error("Error al obtener los mensajes:", error);
-            setResult("Error al obtener los mensajes");
-        }
-    };
+    // const handleGetMessages = async () => {
+    //     try {
+    //         const messages = await retrieveMessages("kjzl6kcym7w8y8rs9islsickyk31iolkznk8zf2e5pgj6svd4nw0ihzr3r60p0e");
+    //         console.log("Mensajes:", messages);
+    //         setResult(JSON.stringify(messages, null, 2));
+    //     } catch (error) {
+    //         console.error("Error al obtener los mensajes:", error);
+    //         setResult("Error al obtener los mensajes");
+    //     }
+    // };
 
 
     return (
@@ -252,12 +252,12 @@ const SamplePage = () => {
             >
                 Enviar mensaje de prueba
             </button>
-            <button 
+            {/* <button 
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded mb-4" 
                 onClick={handleGetMessages}
             >
                 Obtener mensajes de prueba
-            </button>
+            </button> */}
             <button 
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded mb-4" 
                 onClick={retrieveMyChats}

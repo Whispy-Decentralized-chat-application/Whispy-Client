@@ -148,3 +148,93 @@ export async function deriveSharedSecret(privateKey: CryptoKey, publicKey: Crypt
     ["encrypt", "decrypt"]
   );
 }
+
+// Utils igual que antes (importJWK, deriveSharedKey, encryptAES, etc.)
+
+export async function encryptMessage(
+  content: string,
+  receiverPublicKeyJwk: JsonWebKey,
+  myPrivateJwk: JsonWebKey
+): Promise<{ content: string, iv: string }> {
+  // Importa claves
+  const myPrivateKey = await importJWK(myPrivateJwk, ["deriveKey"]);
+  const receiverPublicKey = await importJWK(receiverPublicKeyJwk, []);
+  // Deriva la shared key (ECDH)
+  const sharedKey = await deriveSharedKey(myPrivateKey, receiverPublicKey);
+  // Cifra el mensaje
+  const { iv, ciphertext } = await encryptAES(content, sharedKey);
+  return { content: ciphertext, iv };
+}
+
+export async function decryptMessage(
+  encryptedContent: string,
+  iv: string,
+  authorPublicKeyJwk: JsonWebKey,
+  myPrivateJwk: JsonWebKey
+): Promise<string> {
+  // Importa claves
+  const myPrivateKey = await importJWK(myPrivateJwk, ["deriveKey"]);
+  const authorPublicKey = await importJWK(authorPublicKeyJwk, []);
+  // Deriva la shared key (ECDH)
+  const sharedKey = await deriveSharedKey(myPrivateKey, authorPublicKey);
+  // Descifra el mensaje
+  return await decryptAES(encryptedContent, iv, sharedKey);
+}
+
+// --- Utils WebCrypto ---
+async function importJWK(jwk: JsonWebKey, usage: KeyUsage[]): Promise<CryptoKey> {
+  return window.crypto.subtle.importKey(
+    "jwk", jwk,
+    { name: "ECDH", namedCurve: "P-256" },
+    false,
+    usage
+  );
+}
+async function exportJWK(key: CryptoKey): Promise<JsonWebKey> {
+  return window.crypto.subtle.exportKey("jwk", key);
+}
+
+async function deriveSharedKey(privateKey: CryptoKey, publicKey: CryptoKey): Promise<CryptoKey> {
+  return window.crypto.subtle.deriveKey(
+    { name: "ECDH", public: publicKey },
+    privateKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptAES(plaintext: string, key: CryptoKey): Promise<{ iv: string, ciphertext: string }> {
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder().encode(plaintext);
+  const ciphertext = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    enc
+  );
+  return {
+    iv: btoa(String.fromCharCode(...iv)),
+    ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
+  };
+}
+
+async function decryptAES(ciphertextB64: string, ivB64: string, key: CryptoKey): Promise<string> {
+  const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+  const ciphertext = Uint8Array.from(atob(ciphertextB64), c => c.charCodeAt(0));
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    ciphertext
+  );
+  return new TextDecoder().decode(decrypted);
+}
+
+// Utilidad para generar clave simétrica aleatoria (AES-GCM 256)
+async function generateAESKey(): Promise<CryptoKey> {
+  return window.crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+}
+

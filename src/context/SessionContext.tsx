@@ -5,9 +5,9 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 // Puedes ajustar el tipo de clave privada según tu implementación
 type SessionContextType = {
-  privateKey: string | null; // o Uint8Array si usas binario
+  privateKey: JsonWebKey | null;
   isUnlocked: boolean;
-  unlockSession: (privateKey: string) => void;
+  unlockSession: (privateKey: JsonWebKey) => void;
   lockSession: () => void;
 };
 
@@ -19,9 +19,9 @@ const SessionContext = createContext<SessionContextType>({
 });
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [privateKey, setPrivateKey] = useState<string | null>(null);
+    const [privateKey, setPrivateKey] = useState<JsonWebKey | null>(null);
 
-  function unlockSession(privKey: string) {
+  function unlockSession(privKey: JsonWebKey) {
     setPrivateKey(privKey);
   }
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "./components/header";
 import ChatList from "./components/chat-list";
@@ -11,7 +11,7 @@ import { useSession } from "@/context/SessionContext";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 const ChatApp = () => {
-  const { isUnlocked } = useSession();
+  const { isUnlocked, privateKey } = useSession();
   useAuthRedirect(true, { isUnlocked });
   const [user, setUser] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -19,17 +19,15 @@ const ChatApp = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const user = localStorage.getItem("orbis:user");
-    if (user) {
-      setUser(JSON.parse(user).stream_id);
+    const userLS = localStorage.getItem("orbis:user");
+    if (userLS) {
+      setUser(JSON.parse(userLS).stream_id);
     } 
-  }
-  , [router]);
+  }, [router]);
 
-
-  // cuando cambia el chat seleccionado, cargamos mensajes
+  // Cuando cambia el chat seleccionado, cargamos mensajes
   useEffect(() => {
-    if (!selectedChatId) {
+    if (!selectedChatId || !privateKey || !user) {
       setChatMessages([]);
       return;
     }
@@ -37,42 +35,33 @@ const ChatApp = () => {
 
     const fetchMessages = async () => {
       try {
-        const msgs = await retrieveMessages(selectedChatId);
+        // Pasa la clave privada y el streamId actual
+        const msgs = await retrieveMessages(selectedChatId, user, privateKey);
         if (!isMounted) return;
         setChatMessages(
-          msgs
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          msgs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         );
       } catch (e) {
         console.error("Error loading messages:", e);
       }
     };
 
-    // primera carga inmediata
     fetchMessages();
-    // refrescar cada 5 segundos
+    // refrescar cada 3 segundos
     const intervalId = setInterval(fetchMessages, 3000);
 
     return () => {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [selectedChatId]);
+  }, [selectedChatId, privateKey, user]);
 
   const handleSend = async (content: string) => {
-    if (!selectedChatId || !user) return;
-    // Construir mensaje con la estructura requerida
-    const messageObj = {
-      author: user,
-      chatId: selectedChatId,
-      content,
-      msgType: "text",
-      date: new Date().toISOString(),
-    };
+    if (!selectedChatId || !user || !privateKey) return;
     try {
-      // Enviar y recargar mensajes
-      await sendMessage(messageObj);
-      const msgs = await retrieveMessages(selectedChatId);
+      await sendMessage(content, selectedChatId, user, privateKey);
+      // Recargar mensajes
+      const msgs = await retrieveMessages(selectedChatId, user, privateKey);
       setChatMessages(
         msgs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       );
@@ -81,7 +70,7 @@ const ChatApp = () => {
     }
   };
 
-  if (!user) return null;
+  if (!user || !privateKey) return null;
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">

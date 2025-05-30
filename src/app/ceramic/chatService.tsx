@@ -90,3 +90,26 @@ export const getChatMembers = async (chatStreamId: string) => {
     console.log("Chat members:", rows);
     return rows;
 }
+
+export const getChatMembersComplete = async (chatStreamId: string) => {
+    const chatMembershipModel = models.chat_membership;
+    const userModel = models.user;
+
+    const { columns, rows } = await db
+        .select()
+        .context(contexts.whispy_test)
+        .raw(
+            `
+            SELECT u.*, cm."userId"
+            FROM "${chatMembershipModel}" AS cm
+            JOIN "${userModel}" AS u
+                ON u.stream_id = cm."userId"
+            WHERE cm."chatId" = $1;
+            `,
+            [chatStreamId]
+        )
+        .run();
+
+    console.log("Chat members with complete info:", rows);
+    return rows;
+}

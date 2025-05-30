@@ -17,7 +17,7 @@ export const models = {
     chat: "kjzl6hvfrbw6c9bkr3ziu8c0gfqy5rx35youb479htemtmngsyl4yofzkb9idyr",
     community: "kjzl6hvfrbw6c8nox3bnar5sqat63plspjqnej7ad4zoov8952hfuwuxz1xcdux",
     user: "kjzl6hvfrbw6c9x2ec6yeixhtngz548on3uv6c3faek35zljfkvpnsq8bqti34b",
-    message: "kjzl6hvfrbw6c8aswcusrigimbcmuutb2wglh1n0d48wrthbvkd7tgw43w3y9mq",
+    message: "kjzl6hvfrbw6c83nduzuvldvjxmf2o08i6mfpwrtc4kyd54ipx8rbrxcgakexc1",
     chat_membership: "kjzl6hvfrbw6c96ay1rq9lrhphbucxp50v1nt9f0qiekmuz3xisuj5dodbz7wiu",
     relationship: "kjzl6hvfrbw6caqpydfv3pha16j2xwazbpiul8ngwhqp9k96bgmiwwd5ooja2y1",
     post: "kjzl6hvfrbw6c8dso5240upq70fg5wcandt6mdp6hw1mcg3vsab30wu4pkcmm9o",

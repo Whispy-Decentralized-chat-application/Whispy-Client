@@ -33,7 +33,8 @@ export default function LoginPage() {
         return;
       }
       const privKey = await decryptWithPassword(encryptedPrivateKey, password);
-      unlockSession(privKey);
+      const privateKeyJWK: JsonWebKey = JSON.parse(privKey);
+      unlockSession(privateKeyJWK);
       router.push("/"); // Redirige al home después de desbloquear
     } catch {
       setError("Contraseña incorrecta o clave dañada.");

@@ -78,6 +78,11 @@
                 "author": {
                     "$ref": "#/$defs/CeramicStreamID"
                 },
+                "receiver": {
+                    "$ref": "#/$defs/CeramicStreamID"
+                },
+                "iv": {
+                    "type": "string"                },
                 "chatId": {
                     "$ref": "#/$defs/CeramicStreamID"
                 },
@@ -91,7 +96,7 @@
                     "$ref": "#/$defs/DateTime"
                 }
             },
-            "required": ["author", "chatId", "content", "msgType", "date"],
+            "required": ["author", "receiver", "chatId", "content", "msgType", "date"],
             "additionalProperties": false
         }
     },
