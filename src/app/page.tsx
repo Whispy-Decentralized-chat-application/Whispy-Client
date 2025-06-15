@@ -9,6 +9,7 @@ import { getMe } from "./ceramic/userService";
 import { retrieveMessages, sendMessage } from "./ceramic/messageService";
 import { useSession } from "@/context/SessionContext";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { FiMessageCircle } from "react-icons/fi";
 
 const ChatApp = () => {
   const { isUnlocked, privateKey } = useSession();
@@ -80,13 +81,35 @@ const ChatApp = () => {
           selectedChatId={selectedChatId}
           onSelectChat={(chatId: string) => setSelectedChatId(chatId)}
         />
+
+        {/* Contenedor principal */}
         <div className="flex flex-col flex-1">
-          <ChatList messages={chatMessages} />
-          <ChatInput onSendMessage={handleSend} disabled={!selectedChatId} />
+          {selectedChatId ? (
+            <>
+              <ChatList messages={chatMessages} />
+              <ChatInput
+                onSendMessage={handleSend}
+                disabled={!selectedChatId}
+              />
+            </>
+          ) : (
+            <div className="flex flex-col flex-1 items-center justify-center text-center p-6">
+              <FiMessageCircle
+                size={64}
+                className="text-gray-500 dark:text-gray-400 mb-4"
+              />
+              <h2 className="text-3xl font-bold text-gray-700 dark:text-gray-200">
+                Bienvenido a Whispy
+              </h2>
+              <p className="mt-2 text-gray-500 dark:text-gray-400">
+                Selecciona un chat para comenzar
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default ChatApp;
