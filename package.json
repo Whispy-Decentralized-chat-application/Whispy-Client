@@ -6,27 +6,36 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest"
   },
   "dependencies": {
+    "@ethersproject/providers": "^5.8.0",
+    "@useorbis/db-sdk": "^0.0.60-alpha",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.8.4",
     "ethers": "^6.13.5",
-    "framer-motion": "^12.0.3",
+    "framer-motion": "^12.12.1",
     "next": "15.1.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
-    "react-native-web": "^0.19.13"
+    "react-native-web": "^0.19.13",
+    "react-quill-new": "^3.4.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
+    "jest": "^30.0.0",
+    "jest-environment-jsdom": "^30.0.0",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
+    "ts-jest": "^29.4.0",
     "typescript": "^5"
   }
 }
