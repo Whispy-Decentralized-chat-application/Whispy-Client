@@ -57,19 +57,22 @@ const ChatApp = () => {
     };
   }, [selectedChatId, privateKey, user]);
 
-  const handleSend = async (content: string) => {
-    if (!selectedChatId || !user || !privateKey) return;
-    try {
-      await sendMessage(content, selectedChatId, user, privateKey);
-      // Recargar mensajes
-      const msgs = await retrieveMessages(selectedChatId, user, privateKey);
-      setChatMessages(
-        msgs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      );
-    } catch (err) {
-      console.error("Error enviando mensaje:", err);
-    }
-  };
+  const handleSend = async (rawMessage: string) => {
+  if (!selectedChatId || !user || !privateKey) return;
+
+  try {
+    const { msgType, content } = JSON.parse(rawMessage);
+    await sendMessage(content, selectedChatId, user, privateKey, msgType);
+    
+    // Recargar mensajes
+    const msgs = await retrieveMessages(selectedChatId, user, privateKey);
+    setChatMessages(
+      msgs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    );
+  } catch (err) {
+    console.error("Error enviando mensaje:", err);
+  }
+};
 
   if (!user || !privateKey) return null;
 

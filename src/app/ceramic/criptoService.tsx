@@ -204,20 +204,6 @@ async function deriveSharedKey(privateKey: CryptoKey, publicKey: CryptoKey): Pro
   );
 }
 
-async function encryptAES(plaintext: string, key: CryptoKey): Promise<{ iv: string, ciphertext: string }> {
-  const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  const enc = new TextEncoder().encode(plaintext);
-  const ciphertext = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    enc
-  );
-  return {
-    iv: btoa(String.fromCharCode(...iv)),
-    ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
-  };
-}
-
 async function decryptAES(ciphertextB64: string, ivB64: string, key: CryptoKey): Promise<string> {
   const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
   const ciphertext = Uint8Array.from(atob(ciphertextB64), c => c.charCodeAt(0));
@@ -238,3 +224,35 @@ async function generateAESKey(): Promise<CryptoKey> {
   );
 }
 
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function uint8ToBase64(uint8: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < uint8.length; i++) {
+    binary += String.fromCharCode(uint8[i]);
+  }
+  return btoa(binary);
+}
+
+async function encryptAES(plaintext: string, key: CryptoKey): Promise<{ iv: string, ciphertext: string }> {
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encoder = new TextEncoder();
+  const encoded = encoder.encode(plaintext);
+  const ciphertext = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoded
+  );
+  return {
+    iv: uint8ToBase64(iv),
+    ciphertext: arrayBufferToBase64(ciphertext)
+  };
+}

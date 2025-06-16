@@ -399,7 +399,7 @@
                 "publicKey": { "type": "string" }
             },
             "required": ["username", "isPrivate", "publicKey"],
-            "additionalProperties": false
+            "additionalProperties": true
         }
     }
 

@@ -13,6 +13,7 @@ interface Profile {
   controller: string;
   bio: string;
   username: string;
+  profilePicture?: string;
 }
 
 const OtherProfilePage = () => {
@@ -99,7 +100,7 @@ const OtherProfilePage = () => {
         <div className="flex flex-col items-center">
           <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-full mb-4 overflow-hidden">
             <img
-              src="/avatar-placeholder.png"
+              src={profile.profilePicture || "/default-avatar.png"}
               alt="Avatar"
               className="w-full h-full object-cover"
             />

@@ -4,9 +4,10 @@ import { FiUser } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { searchUsersByUsername } from "../ceramic/userService";
 
-const Header = () => {
+const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userName, setUserName] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const router = useRouter();
@@ -23,15 +24,16 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // leer usuario
+  // leer usuario e imagen
   useEffect(() => {
     const stored = localStorage.getItem("orbis:user");
     if (stored) {
       const parsed = JSON.parse(stored);
       setUserName(parsed.username || "");
+      // si existe parsed.image o parsed.profilePicture
+      setProfileImage(parsed.image || parsed.profilePicture || null);
     }
   }, []);
-
   // búsqueda en vivo con debounce
   useEffect(() => {
     const handler = setTimeout(async () => {
@@ -85,12 +87,21 @@ const Header = () => {
       </div>
 
       {/* avatar y menú */}
-      <div className="flex items-center space-x-4 mr-4">
+    <div className="flex items-center space-x-4 mr-4">
         <div className="relative" ref={menuRef}>
-          <FiUser
-            className="h-8 w-8 cursor-pointer"
-            onClick={() => setMenuOpen(o => !o)}
-          />
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="Avatar"
+              className="h-8 w-8 rounded-full cursor-pointer object-cover"
+              onClick={() => setMenuOpen(o => !o)}
+            />
+          ) : (
+            <FiUser
+              className="h-8 w-8 cursor-pointer"
+              onClick={() => setMenuOpen(o => !o)}
+            />
+          )}
           {menuOpen && (
             <div className="origin-top-right absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50">
               <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 font-bold">

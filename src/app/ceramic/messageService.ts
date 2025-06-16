@@ -32,7 +32,8 @@ export const sendMessage = async (
     content: string,
     chatId: string,
     author: string,
-    myPrivateKey: JsonWebKey
+    myPrivateKey: JsonWebKey,
+    type: "text" | "image" | "file" | "audio"
 ) => {
     try {
         await db.getConnectedUser();
@@ -47,7 +48,7 @@ export const sendMessage = async (
                 chatId,
                 content: encryptedContent,
                 iv,
-                msgType: "text",
+                msgType: type,
                 date: new Date().toISOString(),
             };
             await db.insert(models.message)
